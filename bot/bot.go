@@ -2,8 +2,8 @@ package bot
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/cmd"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/interactions"
 	"log"
 	"os"
 	"os/signal"
@@ -28,7 +28,7 @@ func StartBot(token, mongoUri string) {
 		log.Panicf("Error opening Discord session: %v", err)
 	}
 
-	cmd.CreateApplicationCommands(session)
+	interactions.CreateApplicationCommands(session)
 
 	log.Println("Bot is now running. Press CTRL-C to exit.")
 

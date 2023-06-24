@@ -1,4 +1,4 @@
-package cmd
+package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
@@ -15,6 +15,17 @@ var Commands = map[string]Command{
 		ApplicationCommand: &discordgo.ApplicationCommand{
 			Type: discordgo.MessageApplicationCommand,
 			Name: "Report",
+			NameLocalizations: &map[discordgo.Locale]string{
+				discordgo.Russian: "Отправить репорт",
+			},
+		},
+		Handler: reportMessageCommandHandler,
+	},
+	"report": {
+		ApplicationCommand: &discordgo.ApplicationCommand{
+			Type:        discordgo.ChatApplicationCommand,
+			Name:        "report",
+			Description: "Отправить репорт",
 		},
 		Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 			session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
