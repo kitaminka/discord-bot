@@ -1,0 +1,32 @@
+{
+  "commands": {
+    "report": {
+      "messageCommandName": "Отправить репорт",
+      "reportSuccessfullySent": "Репорт успешно отправлен",
+      "errorSendingReport": "Произошла ошибка при отправке вашего репорта. Свяжитесь с администрацией."
+    }
+  },
+  "components": {
+    "resolveReport": {
+      "errorResolvingReport": "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.",
+      "reportResolved": "Репорт рассмотрен",
+      "reportSuccessfullyResolved": "Репорт успешно рассмотрен."
+    },
+    "returnReport": {
+      "errorReturningReport": "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.",
+      "reportReturned": "Репорт возвращен",
+      "reportSuccessfullyReturned": "Репорт успешно возвращен."
+    }
+  },
+  "reports": {
+    "report": "Репорт",
+    "resolvedReport": "Рассмотренный репорт",
+    "reportSender": "Отправитель репорта",
+    "reportedMessageUrl": "Ссылка на сообщение",
+    "reportedMessageSender": "Отправитель сообщения",
+    "reportedMessageContent": "Содержимое сообщения",
+    "reportResolver": "Рассмотритель",
+    "resolve": "Рассмотреть",
+    "return": "Вернуть"
+  }
+}

@@ -7,10 +7,10 @@ import (
 )
 
 func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	targetMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
-	targetMessageContent := fmt.Sprintf("```%v```", targetMessage.Content)
-	targetMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, targetMessage.ID)
-	targetMessageSenderMention := fmt.Sprintf("<@%v>", targetMessage.Author.ID)
+	reportedMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
+	reportedMessageContent := fmt.Sprintf("```%v```", reportedMessage.Content)
+	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
+	reportedMessageSenderMention := fmt.Sprintf("<@%v>", reportedMessage.Author.ID)
 	reportSenderMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
 
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
@@ -34,15 +34,15 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 					},
 					{
 						Name:  "Сообщение",
-						Value: targetMessageUrl,
+						Value: reportedMessageUrl,
 					},
 					{
 						Name:  "Отправитель сообщения",
-						Value: targetMessageSenderMention,
+						Value: reportedMessageSenderMention,
 					},
 					{
 						Name:  "Содержимое сообщения",
-						Value: targetMessageContent,
+						Value: reportedMessageContent,
 					},
 				},
 			},
@@ -76,11 +76,11 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "Сообщение",
-						Value: targetMessageUrl,
+						Value: reportedMessageUrl,
 					},
 					{
 						Name:  "Отправитель сообщения",
-						Value: targetMessageSenderMention,
+						Value: reportedMessageSenderMention,
 					},
 				},
 			},
