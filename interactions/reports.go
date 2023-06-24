@@ -26,7 +26,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	_, err = session.ChannelMessageSendComplex("1121453163451514880", &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title: "Новый репорт",
+				Title: "Репорт",
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "Отправитель репорта",
@@ -53,7 +53,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 					discordgo.Button{
 						Label:    "Рассмотрено",
 						Style:    discordgo.SuccessButton,
-						CustomID: "report_resolved",
+						CustomID: "resolve_report",
 						Emoji: discordgo.ComponentEmoji{
 							Name: "✅",
 						},
@@ -91,7 +91,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	}
 }
 
-func reportResolvedHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func resolveReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if len(interactionCreate.Message.Embeds) != 1 {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
 		log.Println("Report message is invalid")
@@ -99,7 +99,7 @@ func reportResolvedHandler(session *discordgo.Session, interactionCreate *discor
 	}
 
 	reportResolverMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
-	reportMessageEmbeds := interactionCreate.Message.Embeds[0]
+	reportMessageEmbed := interactionCreate.Message.Embeds[0]
 
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -114,10 +114,25 @@ func reportResolvedHandler(session *discordgo.Session, interactionCreate *discor
 	resolvedReportMessage, err := session.ChannelMessageSendComplex("1122193280445194340", &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Fields: append(reportMessageEmbeds.Fields, &discordgo.MessageEmbedField{
+				Title: "Рассмотренный репорт",
+				Fields: append(reportMessageEmbed.Fields, &discordgo.MessageEmbedField{
 					Name:  "Рассмотритель",
 					Value: reportResolverMention,
 				}),
+			},
+		},
+		Components: []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						Label:    "Вернуть",
+						Style:    discordgo.PrimaryButton,
+						CustomID: "return_report",
+						Emoji: discordgo.ComponentEmoji{
+							Name: "🔄",
+						},
+					},
+				},
 			},
 		},
 	})
@@ -142,6 +157,76 @@ func reportResolvedHandler(session *discordgo.Session, interactionCreate *discor
 			{
 				Title:       "Репорт рассмотрен",
 				Description: "Репорт был успешно перемещен в рассмотренные.",
+			},
+		},
+	})
+	if err != nil {
+		log.Println("Error creating followup message: ", err)
+	}
+}
+
+func returnReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if len(interactionCreate.Message.Embeds) != 1 {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		log.Println("Resolved report message is invalid")
+		return
+	}
+
+	resolvedReportMessageEmbed := interactionCreate.Message.Embeds[0]
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Println("Error responding to interaction: ", err)
+	}
+
+	resolvedReportMessage, err := session.ChannelMessageSendComplex("1121453163451514880", &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:  "Репорт",
+				Fields: resolvedReportMessageEmbed.Fields[:len(resolvedReportMessageEmbed.Fields)-1],
+			},
+		},
+		Components: []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						Label:    "Рассмотрено",
+						Style:    discordgo.SuccessButton,
+						CustomID: "resolve_report",
+						Emoji: discordgo.ComponentEmoji{
+							Name: "✅",
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		log.Println("Error sending report: ", err)
+		return
+	}
+	err = session.ChannelMessageDelete(interactionCreate.Message.ChannelID, interactionCreate.Message.ID)
+	if err != nil {
+		err = session.ChannelMessageDelete(resolvedReportMessage.ChannelID, resolvedReportMessage.ID)
+		if err != nil {
+			log.Println("Error deleting report: ", err)
+		}
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		log.Println("Error deleting resolved report: ", err)
+		return
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:       "Репорт возвращен",
+				Description: "Репорт был успешно возвращен в нерассмотренные.",
 			},
 		},
 	})

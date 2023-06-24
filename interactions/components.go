@@ -10,10 +10,16 @@ type Component struct {
 }
 
 var Components = map[string]Component{
-	"report_resolved": {
+	"resolve_report": {
 		MessageComponent: &discordgo.Button{
 			CustomID: "report_resolved",
 		},
-		Handler: reportResolvedHandler,
+		Handler: resolveReportHandler,
+	},
+	"return_report": {
+		MessageComponent: &discordgo.Button{
+			CustomID: "report_resolved",
+		},
+		Handler: returnReportHandler,
 	},
 }
