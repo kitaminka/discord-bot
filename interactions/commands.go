@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/cfg"
 	"log"
 )
 
@@ -11,36 +12,18 @@ type Command struct {
 }
 
 var Commands = map[string]Command{
-	"Report": {
+	"Отправить репорт": {
 		ApplicationCommand: &discordgo.ApplicationCommand{
 			Type: discordgo.MessageApplicationCommand,
-			Name: "Report",
-			NameLocalizations: &map[discordgo.Locale]string{
-				discordgo.Russian: "Отправить репорт",
-			},
+			Name: "Отправить репорт",
 		},
 		Handler: reportMessageCommandHandler,
-	},
-	"report": {
-		ApplicationCommand: &discordgo.ApplicationCommand{
-			Type:        discordgo.ChatApplicationCommand,
-			Name:        "report",
-			Description: "Отправить репорт",
-		},
-		Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-			session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: "Report",
-				},
-			})
-		},
 	},
 }
 
 func CreateApplicationCommands(session *discordgo.Session) {
 	for index, value := range Commands {
-		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, "1096521857081036831", value.ApplicationCommand)
+		cmd, err := session.ApplicationCommandCreate(session.State.User.ID, cfg.Config.ServerID, value.ApplicationCommand)
 		if err != nil {
 			log.Panicf("Error creating '%v' command: %v", value.ApplicationCommand.Name, err)
 		}
@@ -54,7 +37,7 @@ func CreateApplicationCommands(session *discordgo.Session) {
 }
 func RemoveApplicationCommands(session *discordgo.Session) {
 	for _, value := range Commands {
-		err := session.ApplicationCommandDelete(session.State.User.ID, "1096521857081036831", value.ApplicationCommand.ID)
+		err := session.ApplicationCommandDelete(session.State.User.ID, cfg.Config.ServerID, value.ApplicationCommand.ID)
 		if err != nil {
 			log.Panicf("Error deleting '%v' command: %v", value.ApplicationCommand.Name, err)
 		}

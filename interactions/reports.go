@@ -3,6 +3,7 @@ package interactions
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/cfg"
 	"log"
 )
 
@@ -45,19 +46,13 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 						Value: reportedMessageContent,
 					},
 				},
+				Color: cfg.Config.EmbedColors.Default,
 			},
 		},
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					discordgo.Button{
-						Label:    "Рассмотрено",
-						Style:    discordgo.SuccessButton,
-						CustomID: "resolve_report",
-						Emoji: discordgo.ComponentEmoji{
-							Name: "✅",
-						},
-					},
+					Components["resolve_report"].MessageComponent,
 				},
 			},
 		},
@@ -83,6 +78,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 						Value: reportedMessageSenderMention,
 					},
 				},
+				Color: cfg.Config.EmbedColors.Default,
 			},
 		},
 	})
@@ -119,12 +115,13 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 					Name:  "Рассмотритель",
 					Value: reportResolverMention,
 				}),
+				Color: cfg.Config.EmbedColors.Default,
 			},
 		},
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					discordgo.Button{
+					&discordgo.Button{
 						Label:    "Вернуть",
 						Style:    discordgo.PrimaryButton,
 						CustomID: "return_report",
@@ -157,6 +154,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 			{
 				Title:       "Репорт рассмотрен",
 				Description: "Репорт был успешно перемещен в рассмотренные.",
+				Color:       cfg.Config.EmbedColors.Default,
 			},
 		},
 	})
@@ -189,15 +187,16 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 			{
 				Title:  "Репорт",
 				Fields: resolvedReportMessageEmbed.Fields[:len(resolvedReportMessageEmbed.Fields)-1],
+				Color:  cfg.Config.EmbedColors.Default,
 			},
 		},
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					discordgo.Button{
+					&discordgo.Button{
+						CustomID: "resolve_report",
 						Label:    "Рассмотрено",
 						Style:    discordgo.SuccessButton,
-						CustomID: "resolve_report",
 						Emoji: discordgo.ComponentEmoji{
 							Name: "✅",
 						},
@@ -227,6 +226,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 			{
 				Title:       "Репорт возвращен",
 				Description: "Репорт был успешно возвращен в нерассмотренные.",
+				Color:       cfg.Config.EmbedColors.Default,
 			},
 		},
 	})

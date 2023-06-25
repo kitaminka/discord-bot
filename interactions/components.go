@@ -12,13 +12,23 @@ type Component struct {
 var Components = map[string]Component{
 	"resolve_report": {
 		MessageComponent: &discordgo.Button{
-			CustomID: "report_resolved",
+			CustomID: "resolve_report",
+			Label:    "Рассмотрено",
+			Style:    discordgo.SuccessButton,
+			Emoji: discordgo.ComponentEmoji{
+				Name: "✅",
+			},
 		},
 		Handler: resolveReportHandler,
 	},
 	"return_report": {
 		MessageComponent: &discordgo.Button{
-			CustomID: "report_resolved",
+			Label:    "Вернуть",
+			Style:    discordgo.PrimaryButton,
+			CustomID: "return_report",
+			Emoji: discordgo.ComponentEmoji{
+				Name: "🔄",
+			},
 		},
 		Handler: returnReportHandler,
 	},

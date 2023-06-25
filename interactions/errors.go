@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/cfg"
 	"log"
 )
 
@@ -9,6 +10,7 @@ func createErrorEmbed(errorMessage string) *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
 		Title:       "Ошибка",
 		Description: errorMessage,
+		Color:       cfg.Config.EmbedColors.Error,
 	}
 }
 func interactionRespondError(session *discordgo.Session, interaction *discordgo.Interaction, errorMessage string) {
