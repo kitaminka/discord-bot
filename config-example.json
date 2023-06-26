@@ -1,8 +1,10 @@
 {
   "development": false,
   "serverId": "613425648685547541",
+  "reportChannelId": "1121453163451514880",
+  "resoledReportChannelId": "1122193280445194340",
   "embedColors": {
-    "default": 6726143,
+    "default": 14546431,
     "error": 16711680
   }
 }

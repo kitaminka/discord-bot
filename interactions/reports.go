@@ -24,7 +24,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		log.Println("Error responding to interaction: ", err)
 	}
 
-	_, err = session.ChannelMessageSendComplex("1121453163451514880", &discordgo.MessageSend{
+	_, err = session.ChannelMessageSendComplex(cfg.Config.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Репорт",
@@ -107,7 +107,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		log.Println("Error responding to interaction: ", err)
 	}
 
-	resolvedReportMessage, err := session.ChannelMessageSendComplex("1122193280445194340", &discordgo.MessageSend{
+	resolvedReportMessage, err := session.ChannelMessageSendComplex(cfg.Config.ResoledReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Рассмотренный репорт",
@@ -182,7 +182,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 		log.Println("Error responding to interaction: ", err)
 	}
 
-	resolvedReportMessage, err := session.ChannelMessageSendComplex("1121453163451514880", &discordgo.MessageSend{
+	resolvedReportMessage, err := session.ChannelMessageSendComplex(cfg.Config.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:  "Репорт",

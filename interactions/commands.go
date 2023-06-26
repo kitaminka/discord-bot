@@ -36,11 +36,16 @@ func CreateApplicationCommands(session *discordgo.Session) {
 	}
 }
 func RemoveApplicationCommands(session *discordgo.Session) {
-	for _, value := range Commands {
-		err := session.ApplicationCommandDelete(session.State.User.ID, cfg.Config.ServerID, value.ApplicationCommand.ID)
+	commands, err := session.ApplicationCommands(session.State.User.ID, cfg.Config.ServerID)
+	if err != nil {
+		log.Printf("Error getting application commands: %v", err)
+		return
+	}
+	for _, command := range commands {
+		err = session.ApplicationCommandDelete(session.State.User.ID, cfg.Config.ServerID, command.ID)
 		if err != nil {
-			log.Panicf("Error deleting '%v' command: %v", value.ApplicationCommand.Name, err)
+			log.Panicf("Error deleting '%v' command: %v", command.Name, err)
 		}
-		log.Printf("Successfully deleted '%v' command", value.ApplicationCommand.Name)
+		log.Printf("Successfully deleted '%v' command", command.Name)
 	}
 }
