@@ -1,7 +1,9 @@
 package interactions
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
 	"log"
 )
 
@@ -19,6 +21,29 @@ var (
 				DMPermission: new(bool),
 			},
 			Handler: reportMessageCommandHandler,
+		},
+		"create-server": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:         discordgo.ChatApplicationCommand,
+				Name:         "create-server",
+				Description:  "Test command",
+				DMPermission: new(bool),
+			},
+			Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+				_ = db.UpdateServer(db.Server{
+					ID:                     interactionCreate.GuildID,
+					ReportChannelID:        "1121453163451514880",
+					ResoledReportChannelId: "1122193280445194340",
+				})
+				server, _ := db.GetServer(interactionCreate.GuildID)
+
+				session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Content: fmt.Sprintf("%v", server),
+					},
+				})
+			},
 		},
 	}
 )

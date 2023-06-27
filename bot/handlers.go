@@ -11,7 +11,7 @@ var Handlers = []interface{}{
 		case discordgo.InteractionApplicationCommand:
 			interactions.Commands[interactionCreate.ApplicationCommandData().Name].Handler(session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
-			interactions.Components[interactionCreate.MessageComponentData().CustomID].Handler(session, interactionCreate)
+			interactions.ComponentHandlers[interactionCreate.MessageComponentData().CustomID](session, interactionCreate)
 		}
 	},
 }

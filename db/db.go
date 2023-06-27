@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	MongoClient *mongo.Client
+	MongoClient   *mongo.Client
+	MongoDatabase *mongo.Database
 )
 
-func ConnectMongo(mongoUri string) {
+func ConnectMongo(mongoUri, mongoDatabaseName string) {
 	mongoClient, err := mongo.Connect(nil, options.Client().ApplyURI(mongoUri))
 	if err != nil {
 		log.Panicf("Error connecting to MongoDB: %v", err)
@@ -19,4 +20,5 @@ func ConnectMongo(mongoUri string) {
 	log.Print("Successfully connected to MongoDB")
 
 	MongoClient = mongoClient
+	MongoDatabase = mongoClient.Database(mongoDatabaseName)
 }

@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	Token    string
-	MongoUri string
+	Token             string
+	MongoUri          string
+	MongoDatabaseName string
 )
 
 func init() {
@@ -20,8 +21,9 @@ func init() {
 
 	Token = os.Getenv("DISCORD_TOKEN")
 	MongoUri = os.Getenv("MONGO_URI")
+	MongoDatabaseName = os.Getenv("MONGO_DATABASE_NAME")
 }
 
 func main() {
-	bot.StartBot(Token, MongoUri)
+	bot.StartBot(Token, MongoUri, MongoDatabaseName)
 }
