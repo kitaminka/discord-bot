@@ -28,7 +28,6 @@ func StartBot(token, mongoUri, mongoDatabaseName string) {
 		log.Panicf("Error opening Discord session: %v", err)
 	}
 
-	interactions.RemoveApplicationCommands(session)
 	interactions.CreateApplicationCommands(session)
 
 	log.Println("Bot is now running. Press CTRL-C to exit.")
