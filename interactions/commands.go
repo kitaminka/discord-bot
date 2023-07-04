@@ -78,6 +78,16 @@ var (
 				db.ChangeMemberReputation(interactionCreate.ApplicationCommandData().TargetID, 1)
 			},
 		},
+		"-REP": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:         discordgo.UserApplicationCommand,
+				Name:         "-REP",
+				DMPermission: new(bool),
+			},
+			Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+				db.ChangeMemberReputation(interactionCreate.ApplicationCommandData().TargetID, -1)
+			},
+		},
 	}
 )
 
