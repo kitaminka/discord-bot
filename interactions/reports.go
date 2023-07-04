@@ -4,16 +4,11 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/cfg"
+	"github.com/kitaminka/discord-bot/db"
 	"log"
 )
 
 func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	reportedMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
-	reportedMessageContent := fmt.Sprintf("```%v```", reportedMessage.Content)
-	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
-	reportedMessageSenderMention := fmt.Sprintf("<@%v>", reportedMessage.Author.ID)
-	reportSenderMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
-
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -22,9 +17,22 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	})
 	if err != nil {
 		log.Println("Error responding to interaction: ", err)
+		return
 	}
 
-	_, err = session.ChannelMessageSendComplex(cfg.Config.ReportChannelID, &discordgo.MessageSend{
+	guild, err := db.GetGuild(interactionCreate.GuildID)
+	if err != nil {
+		log.Println("Error getting server: ", err)
+		return
+	}
+
+	reportedMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
+	reportedMessageContent := fmt.Sprintf("```%v```", reportedMessage.Content)
+	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
+	reportedMessageSenderMention := fmt.Sprintf("<@%v>", reportedMessage.Author.ID)
+	reportSenderMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
+
+	_, err = session.ChannelMessageSendComplex(guild.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Репорт",
@@ -84,19 +92,11 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	})
 	if err != nil {
 		log.Println("Error creating followup message: ", err)
+		return
 	}
 }
 
 func resolveReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	if len(interactionCreate.Message.Embeds) != 1 {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
-		log.Println("Report message is invalid")
-		return
-	}
-
-	reportResolverMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
-	reportMessageEmbed := interactionCreate.Message.Embeds[0]
-
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -105,7 +105,17 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 	})
 	if err != nil {
 		log.Println("Error responding to interaction: ", err)
+		return
 	}
+
+	if len(interactionCreate.Message.Embeds) != 1 {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
+		log.Println("Report message is invalid")
+		return
+	}
+
+	reportResolverMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
+	reportMessageEmbed := interactionCreate.Message.Embeds[0]
 
 	resolvedReportMessage, err := session.ChannelMessageSendComplex(cfg.Config.ResoledReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
@@ -153,18 +163,11 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 	})
 	if err != nil {
 		log.Println("Error creating followup message: ", err)
+		return
 	}
 }
 
 func returnReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	if len(interactionCreate.Message.Embeds) != 1 {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
-		log.Println("Resolved report message is invalid")
-		return
-	}
-
-	resolvedReportMessageEmbed := interactionCreate.Message.Embeds[0]
-
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -173,7 +176,16 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 	})
 	if err != nil {
 		log.Println("Error responding to interaction: ", err)
+		return
 	}
+
+	if len(interactionCreate.Message.Embeds) != 1 {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		log.Println("Resolved report message is invalid")
+		return
+	}
+
+	resolvedReportMessageEmbed := interactionCreate.Message.Embeds[0]
 
 	resolvedReportMessage, err := session.ChannelMessageSendComplex(cfg.Config.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
@@ -218,5 +230,6 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 	})
 	if err != nil {
 		log.Println("Error creating followup message: ", err)
+		return
 	}
 }

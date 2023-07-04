@@ -1,7 +1,6 @@
 package interactions
 
 import (
-	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"log"
@@ -22,27 +21,77 @@ var (
 			},
 			Handler: reportMessageCommandHandler,
 		},
-		"create-server": {
+		"update-guild": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
-				Type:         discordgo.ChatApplicationCommand,
-				Name:         "create-server",
-				Description:  "Test command",
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "update-guild",
+				Description: "Обновить настройки сервера",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionChannel,
+						Name:        "report-channel",
+						Description: "Канал для репортов",
+						ChannelTypes: []discordgo.ChannelType{
+							discordgo.ChannelTypeGuildText,
+						},
+						Required: false,
+					},
+					{
+						Type:        discordgo.ApplicationCommandOptionChannel,
+						Name:        "resolved-report-channel",
+						Description: "Канал для рассмотренных репортов",
+						ChannelTypes: []discordgo.ChannelType{
+							discordgo.ChannelTypeGuildText,
+						},
+						Required: false,
+					},
+				},
 				DMPermission: new(bool),
 			},
 			Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-				_ = db.UpdateServer(db.Server{
-					ID:                     interactionCreate.GuildID,
-					ReportChannelID:        "1121453163451514880",
-					ResoledReportChannelId: "1122193280445194340",
-				})
-				server, _ := db.GetServer(interactionCreate.GuildID)
-
-				session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
+				err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
-						Content: fmt.Sprintf("%v", server),
+						Flags: discordgo.MessageFlagsEphemeral,
 					},
 				})
+				if err != nil {
+					log.Println("Error responding to interaction: ", err)
+					return
+				}
+
+				server := db.Guild{
+					ID: interactionCreate.GuildID,
+				}
+
+				for _, option := range interactionCreate.ApplicationCommandData().Options {
+					switch option.Name {
+					case "report-channel":
+						server.ReportChannelID = option.ChannelValue(session).ID
+					case "resolved-report-channel":
+						server.ResoledReportChannelID = option.ChannelValue(session).ID
+					}
+				}
+
+				err = db.UpdateGuild(server)
+				if err != nil {
+					log.Printf("Error updating guild: %v", err)
+					return
+				}
+
+				_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
+					Embeds: []*discordgo.MessageEmbed{
+						{
+							Title:       "Настройки сервера обновлены",
+							Description: "Настройки сервера были обновлены.",
+							Color:       DefaultEmbedColor,
+						},
+					},
+				})
+				if err != nil {
+					log.Println("Error creating followup message: ", err)
+					return
+				}
 			},
 		},
 	}
