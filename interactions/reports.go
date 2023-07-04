@@ -89,6 +89,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 				Color: DefaultEmbedColor,
 			},
 		},
+		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
 		log.Printf("Error creating followup message: %v", err)
@@ -167,6 +168,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 				Color:       DefaultEmbedColor,
 			},
 		},
+		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
 		log.Printf("Error creating followup message: %v", err)
@@ -241,6 +243,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 				Color:       DefaultEmbedColor,
 			},
 		},
+		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
 		log.Printf("Error creating followup message: %v", err)

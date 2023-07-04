@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
 	"log"
 )
 
@@ -48,7 +49,34 @@ var (
 				DMPermission:             new(bool),
 				DefaultMemberPermissions: &AdministratorPermission,
 			},
-			Handler: UpdateGuildHandler,
+			Handler: updateGuildChatCommandHandler,
+		},
+		"profile": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "profile",
+				Description: "Просмотреть профиль пользователя",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "user",
+						Description: "Пользователь",
+						Required:    false,
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: profileChatCommandHandler,
+		},
+		"+REP": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:         discordgo.UserApplicationCommand,
+				Name:         "+REP",
+				DMPermission: new(bool),
+			},
+			Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+				db.ChangeMemberReputation(interactionCreate.ApplicationCommandData().TargetID, 1)
+			},
 		},
 	}
 )

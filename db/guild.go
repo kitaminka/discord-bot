@@ -18,8 +18,8 @@ func UpdateGuild(server Guild) error {
 	return err
 }
 
-func GetGuild(discordId string) (Guild, error) {
+func GetGuild(guildID string) (Guild, error) {
 	var server Guild
-	err := MongoDatabase.Collection(GuildsCollectionName).FindOne(nil, bson.D{{"id", discordId}}).Decode(&server)
+	err := MongoDatabase.Collection(GuildsCollectionName).FindOne(nil, bson.D{{"id", guildID}}).Decode(&server)
 	return server, err
 }
