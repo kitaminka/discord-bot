@@ -56,7 +56,7 @@ var (
 					},
 				})
 				if err != nil {
-					log.Println("Error responding to interaction: ", err)
+					log.Printf("Error responding to interaction: %v", err)
 					return
 				}
 
@@ -89,7 +89,7 @@ var (
 					},
 				})
 				if err != nil {
-					log.Println("Error creating followup message: ", err)
+					log.Printf("Error creating followup message: %v", err)
 					return
 				}
 			},
