@@ -2,7 +2,6 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
 	"log"
 )
 
@@ -46,53 +45,10 @@ var (
 						Required: false,
 					},
 				},
-				DMPermission: new(bool),
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &AdministratorPermission,
 			},
-			Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-				err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Flags: discordgo.MessageFlagsEphemeral,
-					},
-				})
-				if err != nil {
-					log.Printf("Error responding to interaction: %v", err)
-					return
-				}
-
-				server := db.Guild{
-					ID: interactionCreate.GuildID,
-				}
-
-				for _, option := range interactionCreate.ApplicationCommandData().Options {
-					switch option.Name {
-					case "report-channel":
-						server.ReportChannelID = option.ChannelValue(session).ID
-					case "resolved-report-channel":
-						server.ResoledReportChannelID = option.ChannelValue(session).ID
-					}
-				}
-
-				err = db.UpdateGuild(server)
-				if err != nil {
-					log.Printf("Error updating guild: %v", err)
-					return
-				}
-
-				_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-					Embeds: []*discordgo.MessageEmbed{
-						{
-							Title:       "Настройки сервера обновлены",
-							Description: "Настройки сервера были обновлены.",
-							Color:       DefaultEmbedColor,
-						},
-					},
-				})
-				if err != nil {
-					log.Printf("Error creating followup message: %v", err)
-					return
-				}
-			},
+			Handler: UpdateGuildHandler,
 		},
 	}
 )
