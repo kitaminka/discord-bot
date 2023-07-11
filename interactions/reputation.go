@@ -11,16 +11,25 @@ import (
 )
 
 func likeUserCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	reputationUserCommandHandler(session, interactionCreate, true)
+	reputationCommandHandler(session, interactionCreate, true)
 }
 
 func dislikeUserCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	reputationUserCommandHandler(session, interactionCreate, false)
+	reputationCommandHandler(session, interactionCreate, false)
+}
+func likeChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	reputationCommandHandler(session, interactionCreate, true)
+}
+func dislikeChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	reputationCommandHandler(session, interactionCreate, false)
 }
 
-func reputationUserCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, like bool) {
+// Used for user command and chat command
+func reputationCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, like bool) {
 	var action string
 	var reputationChange int
+	var targetUser *discordgo.User
+
 	if like {
 		action = "лайк"
 		reputationChange = 1
@@ -29,22 +38,29 @@ func reputationUserCommandHandler(session *discordgo.Session, interactionCreate 
 		reputationChange = -1
 	}
 
-	if interactionCreate.Member.User.ID == interactionCreate.ApplicationCommandData().TargetID {
+	if len(interactionCreate.ApplicationCommandData().Options) == 0 {
+		var err error
+		targetUser, err = session.User(interactionCreate.ApplicationCommandData().TargetID)
+		if err != nil {
+			interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+			log.Printf("Error getting user: %v", err)
+			return
+		}
+	} else {
+		targetUser = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
+	}
+
+	if interactionCreate.Member.User.ID == targetUser.ID {
 		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v самому себе.", action))
 		return
 	}
-	targetUser, err := session.User(interactionCreate.ApplicationCommandData().TargetID)
-	if err != nil {
-		interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
-		log.Printf("Error getting user: %v", err)
-		return
-	}
+
 	if targetUser.Bot {
 		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v боту.", action))
 		return
 	}
 
-	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags: discordgo.MessageFlagsEphemeral,

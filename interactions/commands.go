@@ -95,6 +95,40 @@ var (
 			},
 			Handler: dislikeUserCommandHandler,
 		},
+		"like": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "like",
+				Description: "Поставить лайк пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите поставить лайк",
+						Required:    true,
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: likeChatCommandHandler,
+		},
+		"dislike": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "dislike",
+				Description: "Поставить дизлайк пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите поставить дизлайк",
+						Required:    true,
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: dislikeChatCommandHandler,
+		},
 	}
 )
 
