@@ -20,35 +20,132 @@ var (
 			},
 			Handler: reportMessageCommandHandler,
 		},
-		"update-guild": {
+		"guild": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
 				Type:        discordgo.ChatApplicationCommand,
-				Name:        "update-guild",
-				Description: "Обновить настройки сервера",
+				Name:        "guild",
+				Description: "Управление настройками сервера",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
-						Type:        discordgo.ApplicationCommandOptionChannel,
-						Name:        "report-channel",
-						Description: "Канал для репортов",
-						ChannelTypes: []discordgo.ChannelType{
-							discordgo.ChannelTypeGuildText,
+						Type:        discordgo.ApplicationCommandOptionSubCommand,
+						Name:        "update",
+						Description: "Обновить настройки сервера",
+						Options: []*discordgo.ApplicationCommandOption{
+							{
+								Type:        discordgo.ApplicationCommandOptionChannel,
+								Name:        "канал_для_репортов",
+								Description: "Канал, где находятся нерассмотренные репорты",
+								ChannelTypes: []discordgo.ChannelType{
+									discordgo.ChannelTypeGuildText,
+								},
+								Required: false,
+							},
+							{
+								Type:        discordgo.ApplicationCommandOptionChannel,
+								Name:        "канал_для_рассмотренных_репортов",
+								Description: "Канал, где находятся рассмотренные репорты",
+								ChannelTypes: []discordgo.ChannelType{
+									discordgo.ChannelTypeGuildText,
+								},
+								Required: false,
+							},
 						},
-						Required: false,
 					},
 					{
-						Type:        discordgo.ApplicationCommandOptionChannel,
-						Name:        "resolved-report-channel",
-						Description: "Канал для рассмотренных репортов",
-						ChannelTypes: []discordgo.ChannelType{
-							discordgo.ChannelTypeGuildText,
-						},
-						Required: false,
+						Type:        discordgo.ApplicationCommandOptionSubCommand,
+						Name:        "view",
+						Description: "Просмотреть настройки сервера",
 					},
 				},
 				DMPermission:             new(bool),
 				DefaultMemberPermissions: &AdministratorPermission,
 			},
-			Handler: UpdateGuildHandler,
+			Handler: guildChatCommandHandler,
+		},
+		"resetdelay": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "resetdelay",
+				Description: "Сбросить задержку для лайков и дизлайков",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, у которого вы хотите сбросить задержку",
+						Required:    true,
+					},
+				},
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &AdministratorPermission,
+			},
+			Handler: resetDelayChatCommandHandler,
+		},
+		"profile": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "profile",
+				Description: "Просмотреть профиль пользователя",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь для просмотра профиля",
+						Required:    false,
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: profileChatCommandHandler,
+		},
+		"Лайк": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:         discordgo.UserApplicationCommand,
+				Name:         "Лайк",
+				DMPermission: new(bool),
+			},
+			Handler: likeUserCommandHandler,
+		},
+		"Дизлайк": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:         discordgo.UserApplicationCommand,
+				Name:         "Дизлайк",
+				DMPermission: new(bool),
+			},
+			Handler: dislikeUserCommandHandler,
+		},
+		"like": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "like",
+				Description: "Поставить лайк пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите поставить лайк",
+						Required:    true,
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: likeChatCommandHandler,
+		},
+		"dislike": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "dislike",
+				Description: "Поставить дизлайк пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите поставить дизлайк",
+						Required:    true,
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: dislikeChatCommandHandler,
 		},
 	}
 )
