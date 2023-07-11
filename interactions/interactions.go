@@ -197,9 +197,14 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		return
 	}
 }
-func profileChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+
+// Used for user command and chat command
+func profileCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
 	})
 	if err != nil {
 		log.Printf("Error responding to interaction: %v", err)
@@ -208,7 +213,14 @@ func profileChatCommandHandler(session *discordgo.Session, interactionCreate *di
 
 	var user *discordgo.User
 
-	if len(interactionCreate.ApplicationCommandData().Options) == 0 {
+	if len(interactionCreate.ApplicationCommandData().TargetID) > 0 {
+		user, err = session.User(interactionCreate.ApplicationCommandData().TargetID)
+		if err != nil {
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя.")
+			log.Printf("Error getting user: %v", err)
+			return
+		}
+	} else if len(interactionCreate.ApplicationCommandData().Options) == 0 {
 		user = interactionCreate.Member.User
 	} else {
 		user = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
