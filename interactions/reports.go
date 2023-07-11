@@ -29,8 +29,8 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	reportedMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
 	reportedMessageContent := fmt.Sprintf("```%v```", reportedMessage.Content)
 	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
-	reportedMessageSenderMention := fmt.Sprintf("<@%v>", reportedMessage.Author.ID)
-	reportSenderMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
+	reportedMessageSenderMention := userMention(reportedMessage.Author)
+	reportSenderMention := userMention(interactionCreate.Member.User)
 
 	_, err = session.ChannelMessageSendComplex(guild.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
@@ -121,7 +121,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
-	reportResolverMention := fmt.Sprintf("<@%v>", interactionCreate.Member.User.ID)
+	reportResolverMention := userMention(interactionCreate.Member.User)
 	reportMessageEmbed := interactionCreate.Message.Embeds[0]
 
 	resolvedReportMessage, err := session.ChannelMessageSendComplex(guild.ResoledReportChannelID, &discordgo.MessageSend{

@@ -1,6 +1,7 @@
 package interactions
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"log"
@@ -12,6 +13,10 @@ const (
 )
 
 var AdministratorPermission = int64(discordgo.PermissionAdministrator)
+
+func userMention(user *discordgo.User) string {
+	return fmt.Sprintf("**%v** (%v)", user.Username, user.Mention())
+}
 
 func UpdateGuildHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
