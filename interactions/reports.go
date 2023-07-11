@@ -95,6 +95,11 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		log.Printf("Error creating followup message: %v", err)
 		return
 	}
+	err = db.IncrementUserReportsSent(interactionCreate.Member.User.ID)
+	if err != nil {
+		log.Printf("Error incrementing user reports sent: %v", err)
+		return
+	}
 }
 
 func resolveReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {

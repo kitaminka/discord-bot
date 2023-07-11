@@ -234,6 +234,10 @@ func profileChatCommandHandler(session *discordgo.Session, interactionCreate *di
 						Name:  "Репутация",
 						Value: strconv.Itoa(member.Reputation),
 					},
+					{
+						Name:  "Количство отправленных репортов",
+						Value: strconv.Itoa(member.ReportsSentCount),
+					},
 				},
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: user.AvatarURL(""),
