@@ -13,10 +13,10 @@ import (
 func likeUserCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	reputationCommandHandler(session, interactionCreate, true)
 }
-
 func dislikeUserCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	reputationCommandHandler(session, interactionCreate, false)
 }
+
 func likeChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	reputationCommandHandler(session, interactionCreate, true)
 }
@@ -93,7 +93,7 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 		log.Printf("Error changing user reputation: %v", err)
-		err = db.ClearUserReputationDelay(user.ID)
+		err = db.ResetUserReputationDelay(user.ID)
 		if err != nil {
 			log.Printf("Error clearing reputation delay: %v", err)
 		}

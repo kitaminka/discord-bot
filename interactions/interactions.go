@@ -1,6 +1,7 @@
 package interactions
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"log"
@@ -14,6 +15,50 @@ const (
 
 var AdministratorPermission = int64(discordgo.PermissionAdministrator)
 
+func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	user := interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
+	if user.Bot {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете сбросить задержку боту.")
+		return
+	}
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	err = db.ResetUserReputationDelay(user.ID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при сбросе задержки.")
+		log.Printf("Error resetting user reputation delay: %v", err)
+		return
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:       "Задержка сброшена",
+				Description: fmt.Sprintf("Задержка пользователя %v была сброшена.", user.Mention()),
+				Color:       DefaultEmbedColor,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error creating followup message: %v", err)
+		return
+	}
+}
 func guildChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
 		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")

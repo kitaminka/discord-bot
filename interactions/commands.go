@@ -62,6 +62,24 @@ var (
 			},
 			Handler: guildChatCommandHandler,
 		},
+		"resetdelay": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "resetdelay",
+				Description: "Сбросить задержку для лайков и дизлайков",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, у которого вы хотите сбросить задержку",
+						Required:    true,
+					},
+				},
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &AdministratorPermission,
+			},
+			Handler: resetDelayChatCommandHandler,
+		},
 		"profile": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
 				Type:        discordgo.ChatApplicationCommand,

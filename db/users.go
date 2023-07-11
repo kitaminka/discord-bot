@@ -30,16 +30,16 @@ func GetUser(userID string) (User, error) {
 	return member, err
 }
 
-func ChangeUserReputation(memberID string, change int) error {
-	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", memberID}}, bson.D{{"$inc", bson.D{{"reputation", change}}}}, options.Update().SetUpsert(true))
+func ChangeUserReputation(userID string, change int) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", userID}}, bson.D{{"$inc", bson.D{{"reputation", change}}}}, options.Update().SetUpsert(true))
 	return err
 }
-func UpdateUserReputationDelay(memberID string) error {
+func UpdateUserReputationDelay(userID string) error {
 	delayEnd := time.Now().Add(ReputationDelay)
-	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", memberID}}, bson.D{{"$set", bson.D{{"reputationDelayEnd", delayEnd}}}}, options.Update().SetUpsert(true))
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"reputationDelayEnd", delayEnd}}}}, options.Update().SetUpsert(true))
 	return err
 }
-func ClearUserReputationDelay(memberID string) error {
-	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", memberID}}, bson.D{{"$set", bson.D{{"reputationDelayEnd", time.Time{}}}}}, options.Update().SetUpsert(true))
+func ResetUserReputationDelay(userID string) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"reputationDelayEnd", time.Time{}}}}}, options.Update().SetUpsert(true))
 	return err
 }
