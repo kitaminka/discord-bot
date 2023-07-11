@@ -20,35 +20,47 @@ var (
 			},
 			Handler: reportMessageCommandHandler,
 		},
-		"update-guild": {
+		"guild": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
 				Type:        discordgo.ChatApplicationCommand,
-				Name:        "update-guild",
-				Description: "Обновить настройки сервера",
+				Name:        "guild",
+				Description: "Управление настройками сервера",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
-						Type:        discordgo.ApplicationCommandOptionChannel,
-						Name:        "report-channel",
-						Description: "Канал для репортов",
-						ChannelTypes: []discordgo.ChannelType{
-							discordgo.ChannelTypeGuildText,
+						Type:        discordgo.ApplicationCommandOptionSubCommand,
+						Name:        "update",
+						Description: "Обновить настройки сервера",
+						Options: []*discordgo.ApplicationCommandOption{
+							{
+								Type:        discordgo.ApplicationCommandOptionChannel,
+								Name:        "канал_для_репортов",
+								Description: "Канал, где находятся нерассмотренные репорты",
+								ChannelTypes: []discordgo.ChannelType{
+									discordgo.ChannelTypeGuildText,
+								},
+								Required: false,
+							},
+							{
+								Type:        discordgo.ApplicationCommandOptionChannel,
+								Name:        "канал_для_рассмотренных_репортов",
+								Description: "Канал, где находятся рассмотренные репорты",
+								ChannelTypes: []discordgo.ChannelType{
+									discordgo.ChannelTypeGuildText,
+								},
+								Required: false,
+							},
 						},
-						Required: false,
 					},
 					{
-						Type:        discordgo.ApplicationCommandOptionChannel,
-						Name:        "resolved-report-channel",
-						Description: "Канал для рассмотренных репортов",
-						ChannelTypes: []discordgo.ChannelType{
-							discordgo.ChannelTypeGuildText,
-						},
-						Required: false,
+						Type:        discordgo.ApplicationCommandOptionSubCommand,
+						Name:        "view",
+						Description: "Просмотреть настройки сервера",
 					},
 				},
 				DMPermission:             new(bool),
 				DefaultMemberPermissions: &AdministratorPermission,
 			},
-			Handler: updateGuildChatCommandHandler,
+			Handler: guildChatCommandHandler,
 		},
 		"profile": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
@@ -58,8 +70,8 @@ var (
 				Options: []*discordgo.ApplicationCommandOption{
 					{
 						Type:        discordgo.ApplicationCommandOptionUser,
-						Name:        "user",
-						Description: "Пользователь",
+						Name:        "пользователь",
+						Description: "Пользователь для просмотра профиля",
 						Required:    false,
 					},
 				},
