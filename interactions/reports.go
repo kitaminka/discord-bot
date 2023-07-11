@@ -8,6 +8,22 @@ import (
 )
 
 func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	reportedMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
+	reportedMessageContent := fmt.Sprintf("```%v```", reportedMessage.Content)
+	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
+	reportedMessageSenderMention := userMention(reportedMessage.Author)
+	reportSenderMention := userMention(interactionCreate.Member.User)
+
+	if interactionCreate.Member.User.ID == reportedMessage.Author.ID {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на своё сообщение.")
+		return
+	}
+
+	if reportedMessage.Author.Bot {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на сообщение бота.")
+		return
+	}
+
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -25,12 +41,6 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		log.Printf("Error getting server: %v", err)
 		return
 	}
-
-	reportedMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
-	reportedMessageContent := fmt.Sprintf("```%v```", reportedMessage.Content)
-	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
-	reportedMessageSenderMention := userMention(reportedMessage.Author)
-	reportSenderMention := userMention(interactionCreate.Member.User)
 
 	_, err = session.ChannelMessageSendComplex(guild.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{

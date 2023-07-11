@@ -80,6 +80,14 @@ var (
 			},
 			Handler: resetDelayChatCommandHandler,
 		},
+		"Профиль": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:         discordgo.UserApplicationCommand,
+				Name:         "Профиль",
+				DMPermission: new(bool),
+			},
+			Handler: profileCommandHandler,
+		},
 		"profile": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
 				Type:        discordgo.ChatApplicationCommand,
@@ -95,7 +103,7 @@ var (
 				},
 				DMPermission: new(bool),
 			},
-			Handler: profileChatCommandHandler,
+			Handler: profileCommandHandler,
 		},
 		"Лайк": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
