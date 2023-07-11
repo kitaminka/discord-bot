@@ -78,7 +78,6 @@ func updateGuildChatCommandHandler(session *discordgo.Session, interactionCreate
 		return
 	}
 }
-
 func profileChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -96,7 +95,7 @@ func profileChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		user = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
 	}
 
-	member, err := db.GetMember(user.ID)
+	member, err := db.GetUser(user.ID)
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя.")
 		log.Printf("Error getting member: %v", err)

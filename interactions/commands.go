@@ -2,7 +2,6 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
 	"log"
 )
 
@@ -68,25 +67,21 @@ var (
 			},
 			Handler: profileChatCommandHandler,
 		},
-		"+REP": {
+		"Лайк": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
 				Type:         discordgo.UserApplicationCommand,
-				Name:         "+REP",
+				Name:         "Лайк",
 				DMPermission: new(bool),
 			},
-			Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-				db.ChangeMemberReputation(interactionCreate.ApplicationCommandData().TargetID, 1)
-			},
+			Handler: likeUserCommandHandler,
 		},
-		"-REP": {
+		"Дизлайк": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
 				Type:         discordgo.UserApplicationCommand,
-				Name:         "-REP",
+				Name:         "Дизлайк",
 				DMPermission: new(bool),
 			},
-			Handler: func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-				db.ChangeMemberReputation(interactionCreate.ApplicationCommandData().TargetID, -1)
-			},
+			Handler: dislikeUserCommandHandler,
 		},
 	}
 )
