@@ -15,6 +15,10 @@ const (
 
 var AdministratorPermission = int64(discordgo.PermissionAdministrator)
 
+func userMention(user *discordgo.User) string {
+	return fmt.Sprintf("**%v** (%v)", user.Username, user.Mention())
+}
+
 func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
 		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
