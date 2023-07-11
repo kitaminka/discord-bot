@@ -210,6 +210,11 @@ func profileChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		user = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
 	}
 
+	if user.Bot {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Вы не можете просмотреть профиль бота.")
+		return
+	}
+
 	member, err := db.GetUser(user.ID)
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя.")
