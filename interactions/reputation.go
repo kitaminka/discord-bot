@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/logs"
+	"github.com/kitaminka/discord-bot/msg"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"log"
@@ -100,12 +102,17 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
+	err = logs.LogReputationChange(session, interactionCreate.GuildID, interactionCreate.Member.User, targetUser, reputationChange)
+	if err != nil {
+		log.Printf("Error logging reputation change: %v", err)
+	}
+
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       cases.Title(language.Russian).String(action),
-				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, targetUser.Mention()),
-				Color:       DefaultEmbedColor,
+				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, msg.UserMention(targetUser)),
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -136,7 +143,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 	}
 
 	var fields []*discordgo.MessageEmbedField
-	for _, user := range *users {
+	for i, user := range *users {
 		var discordUser *discordgo.User
 		discordUser, err = session.User(user.ID)
 		if err != nil {
@@ -145,9 +152,20 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 			return
 		}
 
+		var PlaceEmoji string
+
+		switch i {
+		case 0:
+			PlaceEmoji = msg.FirstEmoji
+		case 1:
+			PlaceEmoji = msg.SecondEmoji
+		case 2:
+			PlaceEmoji = msg.ThirdEmoji
+		}
+
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:  discordUser.Username,
-			Value: fmt.Sprintf("Репутация: %v", user.Reputation),
+			Name:  fmt.Sprintf("%v #%v. %v", PlaceEmoji, i+1, discordUser.Username),
+			Value: fmt.Sprintf("%v **Репутация**: %v", msg.ReputationEmoji, user.Reputation),
 		})
 	}
 
@@ -156,7 +174,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 			{
 				Title:  "Топ пользователей по репутации",
 				Fields: fields,
-				Color:  DefaultEmbedColor,
+				Color:  msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,

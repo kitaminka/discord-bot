@@ -11,6 +11,7 @@ type Guild struct {
 	ID                     string `bson:"id,omitempty"`
 	ReportChannelID        string `bson:"reportChannelId,omitempty"`
 	ResoledReportChannelID string `bson:"resoledReportChannelId,omitempty"`
+	ReputationLogChannelID string `bson:"reputationLogChannelId,omitempty"`
 }
 
 func GetGuild(guildID string) (Guild, error) {

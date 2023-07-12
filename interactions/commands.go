@@ -49,6 +49,15 @@ var (
 								},
 								Required: false,
 							},
+							{
+								Type:        discordgo.ApplicationCommandOptionChannel,
+								Name:        "канал_для_логирования_репутации",
+								Description: "Канал, где логируется изменение репутации пользователей",
+								ChannelTypes: []discordgo.ChannelType{
+									discordgo.ChannelTypeGuildText,
+								},
+								Required: false,
+							},
 						},
 					},
 					{

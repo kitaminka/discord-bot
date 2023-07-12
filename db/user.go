@@ -9,7 +9,7 @@ import (
 
 const UserCollectionName = "users"
 
-const ReputationDelay = 12 * time.Hour
+const ReputationDelay = 40 * time.Minute
 
 type User struct {
 	ID               string    `bson:"id,omitempty"`

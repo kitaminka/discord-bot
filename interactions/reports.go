@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/msg"
 	"log"
 )
 
@@ -11,8 +12,8 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	reportedMessage := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
 	reportedMessageContent := fmt.Sprintf("```%v```", reportedMessage.Content)
 	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
-	reportedMessageSenderMention := userMention(reportedMessage.Author)
-	reportSenderMention := userMention(interactionCreate.Member.User)
+	reportedMessageSenderMention := msg.UserMention(reportedMessage.Author)
+	reportSenderMention := msg.UserMention(interactionCreate.Member.User)
 
 	if interactionCreate.Member.User.ID == reportedMessage.Author.ID {
 		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на своё сообщение.")
@@ -64,7 +65,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 						Value: reportedMessageContent,
 					},
 				},
-				Color: DefaultEmbedColor,
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 		Components: []discordgo.MessageComponent{
@@ -84,19 +85,9 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title:       "Репорт отправлен",
-				Description: "Ваш репорт был успешно отправлен.",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "Сообщение",
-						Value: reportedMessageUrl,
-					},
-					{
-						Name:  "Отправитель сообщения",
-						Value: reportedMessageSenderMention,
-					},
-				},
-				Color: DefaultEmbedColor,
+				Title:       fmt.Sprintf("%v Репорт отправлен", msg.ReportEmoji),
+				Description: fmt.Sprintf("Ваш репорт был успешно отправлен.\n\n%v **Сообщение**: %v\n%v **Отправитель сообщения**: %v", msg.MessageEmoji, reportedMessageUrl, msg.UserEmoji, reportedMessageSenderMention),
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -137,7 +128,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
-	reportResolverMention := userMention(interactionCreate.Member.User)
+	reportResolverMention := msg.UserMention(interactionCreate.Member.User)
 	reportMessageEmbed := interactionCreate.Message.Embeds[0]
 
 	resolvedReportMessage, err := session.ChannelMessageSendComplex(guild.ResoledReportChannelID, &discordgo.MessageSend{
@@ -148,7 +139,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 					Name:  "Рассмотритель",
 					Value: reportResolverMention,
 				}),
-				Color: DefaultEmbedColor,
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 		Components: []discordgo.MessageComponent{
@@ -180,7 +171,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 			{
 				Title:       "Репорт рассмотрен",
 				Description: "Репорт был успешно перемещен в рассмотренные.",
-				Color:       DefaultEmbedColor,
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -223,7 +214,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 			{
 				Title:  "Репорт",
 				Fields: resolvedReportMessageEmbed.Fields[:len(resolvedReportMessageEmbed.Fields)-1],
-				Color:  DefaultEmbedColor,
+				Color:  msg.DefaultEmbedColor,
 			},
 		},
 		Components: []discordgo.MessageComponent{
@@ -255,7 +246,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 			{
 				Title:       "Репорт возвращен",
 				Description: "Репорт был успешно возвращен в нерассмотренные.",
-				Color:       DefaultEmbedColor,
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,

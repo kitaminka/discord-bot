@@ -4,20 +4,11 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/msg"
 	"log"
-	"strconv"
-)
-
-const (
-	DefaultEmbedColor = 14546431
-	ErrorEmbedColor   = 16711680
 )
 
 var AdministratorPermission = int64(discordgo.PermissionAdministrator)
-
-func userMention(user *discordgo.User) string {
-	return fmt.Sprintf("**%v** (%v)", user.Username, user.Mention())
-}
 
 func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
@@ -53,8 +44,8 @@ func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate 
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       "Задержка сброшена",
-				Description: fmt.Sprintf("Задержка пользователя %v была сброшена.", user.Mention()),
-				Color:       DefaultEmbedColor,
+				Description: fmt.Sprintf("Задержка пользователя %v была сброшена.", msg.UserMention(user)),
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 	})
@@ -128,7 +119,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 						Value: resolvedReportChannel.Mention(),
 					},
 				},
-				Color: DefaultEmbedColor,
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -155,7 +146,7 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		ID: interactionCreate.GuildID,
 	}
 
-	for _, option := range interactionCreate.ApplicationCommandData().Options {
+	for _, option := range interactionCreate.ApplicationCommandData().Options[0].Options {
 		switch option.Name {
 		case "канал_для_репортов":
 			channel := option.ChannelValue(session)
@@ -169,6 +160,13 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 			server.ResoledReportChannelID = channel.ID
 			fields = append(fields, &discordgo.MessageEmbedField{
 				Name:  "Канал для рассмотренных репортов",
+				Value: channel.Mention(),
+			})
+		case "канал_для_логирования_репутации":
+			channel := option.ChannelValue(session)
+			server.ReputationLogChannelID = channel.ID
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:  "Канал для логирования репутации",
 				Value: channel.Mention(),
 			})
 		}
@@ -187,7 +185,7 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 				Title:       "Настройки сервера обновлены",
 				Description: "Настройки сервера были успешно обновлены.",
 				Fields:      fields,
-				Color:       DefaultEmbedColor,
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -211,59 +209,52 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		return
 	}
 
-	var user *discordgo.User
+	var member *discordgo.Member
 
 	if len(interactionCreate.ApplicationCommandData().TargetID) > 0 {
-		user, err = session.User(interactionCreate.ApplicationCommandData().TargetID)
+		member, err = session.GuildMember(interactionCreate.GuildID, interactionCreate.ApplicationCommandData().TargetID)
 		if err != nil {
-			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя.")
-			log.Printf("Error getting user: %v", err)
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+			log.Printf("Error getting member: %v", err)
 			return
 		}
 	} else if len(interactionCreate.ApplicationCommandData().Options) == 0 {
-		user = interactionCreate.Member.User
+		member = interactionCreate.Member
 	} else {
-		user = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
+		discordUser := interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
+
+		member, err = session.GuildMember(interactionCreate.GuildID, discordUser.ID)
+		if err != nil {
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+			log.Printf("Error getting member: %v", err)
+			return
+		}
 	}
 
-	if user.Bot {
+	if member.User.Bot {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Вы не можете просмотреть профиль бота.")
 		return
 	}
 
-	member, err := db.GetUser(user.ID)
+	user, err := db.GetUser(member.User.ID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя.")
-		log.Printf("Error getting member: %v", err)
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
 		return
 	}
 
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title: "Профиль пользователя",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "Пользователь",
-						Value: user.Mention(),
-					},
-					{
-						Name:  "ID пользователя",
-						Value: user.ID,
-					},
-					{
-						Name:  "Репутация",
-						Value: strconv.Itoa(member.Reputation),
-					},
-					{
-						Name:  "Количство отправленных репортов",
-						Value: strconv.Itoa(member.ReportsSentCount),
-					},
-				},
+				Title:       fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji, member.User.Username),
+				Description: fmt.Sprintf("%v **Пользователь**: %v\n%v **Присоединился к серверу**: <t:%v:R>\n%v **Репутация**: %v\n%v **Отправленные репортов**: %v\n", msg.MentionEmoji, member.Mention(), msg.JoinEmoji, member.JoinedAt.Unix(), msg.ReputationEmoji, user.Reputation, msg.ReportEmoji, user.ReportsSentCount),
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL: user.AvatarURL(""),
+					URL: member.AvatarURL(""),
 				},
-				Color: DefaultEmbedColor,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: fmt.Sprintf("ID: %v", member.User.ID),
+				},
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 	})
