@@ -155,6 +155,22 @@ var (
 			},
 			Handler: dislikeChatCommandHandler,
 		},
+		"top": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "top",
+				Description: "Просмотреть топ пользователей",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionSubCommand,
+						Name:        "reputation",
+						Description: "Просмотреть топ пользователей по репутации",
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: topChatCommandHandler,
+		},
 	}
 )
 

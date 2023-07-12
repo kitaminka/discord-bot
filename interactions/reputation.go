@@ -115,3 +115,54 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 }
+
+func topReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	users, err := db.GetUserReputationTop()
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+		log.Printf("Error getting reputation top: %v", err)
+		return
+	}
+
+	var fields []*discordgo.MessageEmbedField
+	for _, user := range *users {
+		var discordUser *discordgo.User
+		discordUser, err = session.User(user.ID)
+		if err != nil {
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+			log.Printf("Error getting user: %v", err)
+			return
+		}
+
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:  discordUser.Username,
+			Value: fmt.Sprintf("Репутация: %v", user.Reputation),
+		})
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:  "Топ пользователей по репутации",
+				Fields: fields,
+				Color:  DefaultEmbedColor,
+			},
+		},
+		Flags: discordgo.MessageFlagsEphemeral,
+	})
+	if err != nil {
+		log.Printf("Error creating followup message: %v", err)
+		return
+	}
+}

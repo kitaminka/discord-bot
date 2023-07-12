@@ -19,8 +19,8 @@ type User struct {
 }
 
 func GetUser(userID string) (User, error) {
-	var member User
-	err := MongoDatabase.Collection(UserCollectionName).FindOne(nil, bson.D{{"id", userID}}).Decode(&member)
+	var user User
+	err := MongoDatabase.Collection(UserCollectionName).FindOne(nil, bson.D{{"id", userID}}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
 		return User{
 			ID:               userID,
@@ -29,7 +29,7 @@ func GetUser(userID string) (User, error) {
 			ReportsSentCount: 0,
 		}, nil
 	}
-	return member, err
+	return user, err
 }
 
 func ChangeUserReputation(userID string, change int) error {
@@ -45,6 +45,19 @@ func ResetUserReputationDelay(userID string) error {
 	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"reputationDelayEnd", time.Time{}}}}}, options.Update().SetUpsert(true))
 	return err
 }
+func GetUserReputationTop() (*[]User, error) {
+	users := &[]User{}
+	aggregate, err := MongoDatabase.Collection(UserCollectionName).Aggregate(nil, mongo.Pipeline{
+		{{"$sort", bson.D{{"reputation", -1}}}},
+		{{"$limit", 10}},
+	})
+	if err != nil {
+		return users, err
+	}
+	err = aggregate.All(nil, users)
+	return users, err
+}
+
 func IncrementUserReportsSent(userID string) error {
 	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", userID}}, bson.D{{"$inc", bson.D{{"reportsSentCount", 1}}}}, options.Update().SetUpsert(true))
 	return err

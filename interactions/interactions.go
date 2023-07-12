@@ -272,3 +272,12 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		return
 	}
 }
+
+func topChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	switch interactionCreate.ApplicationCommandData().Options[0].Name {
+	case "reputation":
+		topReputationChatCommandHandler(session, interactionCreate)
+	default:
+		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
+	}
+}
