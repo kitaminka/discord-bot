@@ -212,7 +212,7 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 
 	var member *discordgo.Member
 
-	if len(interactionCreate.ApplicationCommandData().TargetID) > 0 {
+	if len(interactionCreate.ApplicationCommandData().TargetID) != 0 {
 		member, err = session.GuildMember(interactionCreate.GuildID, interactionCreate.ApplicationCommandData().TargetID)
 		if err != nil {
 			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")

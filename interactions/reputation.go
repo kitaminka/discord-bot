@@ -152,7 +152,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 			return
 		}
 
-		var PlaceEmoji string
+		var PlaceEmoji msg.Emoji
 
 		switch i {
 		case 0:

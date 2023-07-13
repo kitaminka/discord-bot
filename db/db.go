@@ -21,5 +21,5 @@ func ConnectMongo(mongoUri, mongoDatabaseName string) {
 	log.Print("Successfully connected to MongoDB")
 
 	MongoClient = mongoClient
-	MongoDatabase = mongoClient.Database(mongoDatabaseName)
+	MongoDatabase = MongoClient.Database(mongoDatabaseName)
 }

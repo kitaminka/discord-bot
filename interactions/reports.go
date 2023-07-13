@@ -47,24 +47,30 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Репорт",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "Отправитель репорта",
-						Value: reportSenderMention,
+				Description: msg.StructuredDescription{
+					Fields: []*msg.DescriptionField{
+						{
+							Emoji: msg.UsernameEmoji,
+							Name:  "Отправитель репорта",
+							Value: reportSenderMention,
+						},
+						{
+							Emoji: msg.TextChannelEmoji,
+							Name:  "Сообщение",
+							Value: reportedMessageUrl,
+						},
+						{
+							Emoji: msg.UserEmoji,
+							Name:  "Отправитель сообщения",
+							Value: reportedMessageSenderMention,
+						},
+						{
+							Emoji: msg.MessageEmoji,
+							Name:  "Содержимое сообщения",
+							Value: reportedMessageContent,
+						},
 					},
-					{
-						Name:  "Сообщение",
-						Value: reportedMessageUrl,
-					},
-					{
-						Name:  "Отправитель сообщения",
-						Value: reportedMessageSenderMention,
-					},
-					{
-						Name:  "Содержимое сообщения",
-						Value: reportedMessageContent,
-					},
-				},
+				}.ToString(),
 				Color: msg.DefaultEmbedColor,
 			},
 		},
@@ -85,9 +91,23 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title:       fmt.Sprintf("%v Репорт отправлен", msg.ReportEmoji),
-				Description: fmt.Sprintf("Ваш репорт был успешно отправлен.\n\n%v **Сообщение**: %v\n%v **Отправитель сообщения**: %v", msg.MessageEmoji, reportedMessageUrl, msg.UserEmoji, reportedMessageSenderMention),
-				Color:       msg.DefaultEmbedColor,
+				Title: fmt.Sprintf("%v Репорт отправлен", msg.ReportEmoji),
+				Description: msg.StructuredDescription{
+					Text: "Ваш репорт был успешно отправлен.",
+					Fields: []*msg.DescriptionField{
+						{
+							Emoji: msg.TextChannelEmoji,
+							Name:  "Сообщение",
+							Value: reportedMessageUrl,
+						},
+						{
+							Emoji: msg.UserEmoji,
+							Name:  "Отправитель сообщения",
+							Value: reportedMessageSenderMention,
+						},
+					},
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -128,17 +148,18 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
-	reportResolverMention := msg.UserMention(interactionCreate.Member.User)
+	reportResolverMember := interactionCreate.Member
 	reportMessageEmbed := interactionCreate.Message.Embeds[0]
 
 	resolvedReportMessage, err := session.ChannelMessageSendComplex(guild.ResoledReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title: "Рассмотренный репорт",
-				Fields: append(reportMessageEmbed.Fields, &discordgo.MessageEmbedField{
-					Name:  "Рассмотритель",
-					Value: reportResolverMention,
-				}),
+				Title:       "Рассмотренный репорт",
+				Description: reportMessageEmbed.Description,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text:    fmt.Sprintf("Рассмотрено: %v", reportResolverMember.User.Username),
+					IconURL: reportResolverMember.AvatarURL(""),
+				},
 				Color: msg.DefaultEmbedColor,
 			},
 		},
@@ -212,9 +233,9 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 	resolvedReportMessage, err := session.ChannelMessageSendComplex(guild.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title:  "Репорт",
-				Fields: resolvedReportMessageEmbed.Fields[:len(resolvedReportMessageEmbed.Fields)-1],
-				Color:  msg.DefaultEmbedColor,
+				Title:       "Репорт",
+				Description: resolvedReportMessageEmbed.Description,
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 		Components: []discordgo.MessageComponent{
