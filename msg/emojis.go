@@ -15,6 +15,8 @@ const (
 	TextChannelEmoji     Emoji = "<:text_channel:1129083099884568589>"
 	ShieldCheckMarkEmoji Emoji = "<:shield_check_mark:1129089940953772202>"
 	IdEmoji              Emoji = "<:id:1129091904961790112>"
+	LikeEmoji            Emoji = "<:like:1129093455377862768>"
+	DislikeEmoji         Emoji = "<:dislike:1129093452664148029>"
 )
 
 type Emoji string

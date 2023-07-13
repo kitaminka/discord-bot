@@ -6,8 +6,6 @@ import (
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/logs"
 	"github.com/kitaminka/discord-bot/msg"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"log"
 	"time"
 )
@@ -107,10 +105,17 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		log.Printf("Error logging reputation change: %v", err)
 	}
 
+	var title string
+	if like {
+		title = fmt.Sprintf("%v Лайк", msg.LikeEmoji)
+	} else {
+		title = fmt.Sprintf("%v Дизлайк", msg.DislikeEmoji)
+	}
+
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title:       cases.Title(language.Russian).String(action),
+				Title:       title,
 				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, msg.UserMention(targetUser)),
 				Color:       msg.DefaultEmbedColor,
 			},
