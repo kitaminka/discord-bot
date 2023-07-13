@@ -4,9 +4,9 @@ import "fmt"
 
 type StructuredDescription struct {
 	Text   string
-	Fields []*DescriptionField
+	Fields []*StructuredDescriptionField
 }
-type DescriptionField struct {
+type StructuredDescriptionField struct {
 	Emoji Emoji
 	Name  string
 	Value string
