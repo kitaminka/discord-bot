@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
 	"log"
 )
 
@@ -44,6 +45,15 @@ var (
 								Type:        discordgo.ApplicationCommandOptionChannel,
 								Name:        "канал_для_рассмотренных_репортов",
 								Description: "Канал, где находятся рассмотренные репорты",
+								ChannelTypes: []discordgo.ChannelType{
+									discordgo.ChannelTypeGuildText,
+								},
+								Required: false,
+							},
+							{
+								Type:        discordgo.ApplicationCommandOptionChannel,
+								Name:        "канал_для_логирования_репутации",
+								Description: "Канал, где логируется изменение репутации пользователей",
 								ChannelTypes: []discordgo.ChannelType{
 									discordgo.ChannelTypeGuildText,
 								},
@@ -154,6 +164,48 @@ var (
 				DMPermission: new(bool),
 			},
 			Handler: dislikeChatCommandHandler,
+		},
+		"top": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "top",
+				Description: "Просмотреть топ пользователей",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionSubCommand,
+						Name:        "reputation",
+						Description: "Просмотреть топ пользователей по репутации",
+					},
+				},
+				DMPermission: new(bool),
+			},
+			Handler: topChatCommandHandler,
+		},
+		"setreputation": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "setreputation",
+				Description: "Установить репутацию пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите установить репутацию",
+						Required:    true,
+					},
+					{
+						Type:        discordgo.ApplicationCommandOptionInteger,
+						MinValue:    &db.MinReputation,
+						MaxValue:    db.MaxReputation,
+						Name:        "репутация",
+						Description: "Репутация, которую вы хотите установить",
+						Required:    true,
+					},
+				},
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &AdministratorPermission,
+			},
+			Handler: setReputationChatCommandHandler,
 		},
 	}
 )

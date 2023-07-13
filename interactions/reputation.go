@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	"github.com/kitaminka/discord-bot/logs"
+	"github.com/kitaminka/discord-bot/msg"
 	"log"
 	"time"
 )
@@ -100,12 +100,86 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
+	err = logs.LogReputationChange(session, interactionCreate.GuildID, interactionCreate.Member.User, targetUser, reputationChange)
+	if err != nil {
+		log.Printf("Error logging reputation change: %v", err)
+	}
+
+	var title string
+	if like {
+		title = fmt.Sprintf("%v Лайк", msg.LikeEmoji)
+	} else {
+		title = fmt.Sprintf("%v Дизлайк", msg.DislikeEmoji)
+	}
+
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title:       cases.Title(language.Russian).String(action),
-				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, targetUser.Mention()),
-				Color:       DefaultEmbedColor,
+				Title:       title,
+				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, msg.UserMention(targetUser)),
+				Color:       msg.DefaultEmbedColor,
+			},
+		},
+		Flags: discordgo.MessageFlagsEphemeral,
+	})
+	if err != nil {
+		log.Printf("Error creating followup message: %v", err)
+		return
+	}
+}
+
+func topReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	users, err := db.GetUserReputationTop()
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+		log.Printf("Error getting reputation top: %v", err)
+		return
+	}
+
+	var fields []*discordgo.MessageEmbedField
+	for i, user := range *users {
+		var discordUser *discordgo.User
+		discordUser, err = session.User(user.ID)
+		if err != nil {
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+			log.Printf("Error getting user: %v", err)
+			return
+		}
+
+		var PlaceEmoji msg.Emoji
+
+		switch i {
+		case 0:
+			PlaceEmoji = msg.FirstEmoji
+		case 1:
+			PlaceEmoji = msg.SecondEmoji
+		case 2:
+			PlaceEmoji = msg.ThirdEmoji
+		}
+
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:  fmt.Sprintf("%v #%v. %v", PlaceEmoji, i+1, discordUser.Username),
+			Value: fmt.Sprintf("%v **Репутация**: %v", msg.ReputationEmoji, user.Reputation),
+		})
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:  "Топ пользователей по репутации",
+				Fields: fields,
+				Color:  msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,

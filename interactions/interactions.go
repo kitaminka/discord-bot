@@ -4,20 +4,12 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/msg"
 	"log"
 	"strconv"
 )
 
-const (
-	DefaultEmbedColor = 14546431
-	ErrorEmbedColor   = 16711680
-)
-
 var AdministratorPermission = int64(discordgo.PermissionAdministrator)
-
-func userMention(user *discordgo.User) string {
-	return fmt.Sprintf("**%v** (%v)", user.Username, user.Mention())
-}
 
 func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
@@ -53,8 +45,8 @@ func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate 
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       "Задержка сброшена",
-				Description: fmt.Sprintf("Задержка пользователя %v была сброшена.", user.Mention()),
-				Color:       DefaultEmbedColor,
+				Description: fmt.Sprintf("Задержка пользователя %v была сброшена.", msg.UserMention(user)),
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 	})
@@ -109,26 +101,42 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 		log.Printf("Error getting resolved report channel: %v", err)
 		return
 	}
+	reputationLogChannel, err := session.Channel(guild.ReputationLogChannelID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
+		log.Printf("Error getting reputation log channel: %v", err)
+		return
+	}
 
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Настройки сервера",
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "ID сервера",
-						Value: guild.ID,
+				Description: msg.StructuredDescription{
+					Fields: []*msg.StructuredDescriptionField{
+						{
+							Emoji: msg.IdEmoji,
+							Name:  "ID сервера",
+							Value: guild.ID,
+						},
+						{
+							Emoji: msg.ReportEmoji,
+							Name:  "Канал для репортов",
+							Value: reportChannel.Mention(),
+						},
+						{
+							Emoji: msg.ShieldCheckMarkEmoji,
+							Name:  "Канал для рассмотренные репортов",
+							Value: resolvedReportChannel.Mention(),
+						},
+						{
+							Emoji: msg.ReputationEmoji,
+							Name:  "Канал для логирования репутации",
+							Value: reputationLogChannel.Mention(),
+						},
 					},
-					{
-						Name:  "Канал для репортов",
-						Value: reportChannel.Mention(),
-					},
-					{
-						Name:  "Канал для рассмотренные репортов",
-						Value: resolvedReportChannel.Mention(),
-					},
-				},
-				Color: DefaultEmbedColor,
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -139,6 +147,11 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 	}
 }
 func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if len(interactionCreate.ApplicationCommandData().Options[0].Options) == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не указали ни одной опции для обновления.")
+		return
+	}
+
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -150,25 +163,37 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		return
 	}
 
-	var fields []*discordgo.MessageEmbedField
+	structuredDescription := msg.StructuredDescription{
+		Text: "Настройки сервера были успешно обновлены.",
+	}
 	server := db.Guild{
 		ID: interactionCreate.GuildID,
 	}
 
-	for _, option := range interactionCreate.ApplicationCommandData().Options {
+	for _, option := range interactionCreate.ApplicationCommandData().Options[0].Options {
 		switch option.Name {
 		case "канал_для_репортов":
 			channel := option.ChannelValue(session)
 			server.ReportChannelID = channel.ID
-			fields = append(fields, &discordgo.MessageEmbedField{
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredDescriptionField{
+				Emoji: msg.ReportEmoji,
 				Name:  "Канал для репортов",
 				Value: channel.Mention(),
 			})
 		case "канал_для_рассмотренных_репортов":
 			channel := option.ChannelValue(session)
 			server.ResoledReportChannelID = channel.ID
-			fields = append(fields, &discordgo.MessageEmbedField{
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredDescriptionField{
+				Emoji: msg.ShieldCheckMarkEmoji,
 				Name:  "Канал для рассмотренных репортов",
+				Value: channel.Mention(),
+			})
+		case "канал_для_логирования_репутации":
+			channel := option.ChannelValue(session)
+			server.ReputationLogChannelID = channel.ID
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredDescriptionField{
+				Emoji: msg.ReputationEmoji,
+				Name:  "Канал для логирования репутации",
 				Value: channel.Mention(),
 			})
 		}
@@ -185,9 +210,8 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       "Настройки сервера обновлены",
-				Description: "Настройки сервера были успешно обновлены.",
-				Fields:      fields,
-				Color:       DefaultEmbedColor,
+				Description: structuredDescription.ToString(),
+				Color:       msg.DefaultEmbedColor,
 			},
 		},
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -211,59 +235,157 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		return
 	}
 
-	var user *discordgo.User
+	var member *discordgo.Member
 
-	if len(interactionCreate.ApplicationCommandData().TargetID) > 0 {
-		user, err = session.User(interactionCreate.ApplicationCommandData().TargetID)
+	if len(interactionCreate.ApplicationCommandData().TargetID) != 0 {
+		member, err = session.GuildMember(interactionCreate.GuildID, interactionCreate.ApplicationCommandData().TargetID)
 		if err != nil {
-			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя.")
-			log.Printf("Error getting user: %v", err)
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+			log.Printf("Error getting member: %v", err)
 			return
 		}
 	} else if len(interactionCreate.ApplicationCommandData().Options) == 0 {
-		user = interactionCreate.Member.User
+		member = interactionCreate.Member
 	} else {
-		user = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
+		discordUser := interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
+
+		member, err = session.GuildMember(interactionCreate.GuildID, discordUser.ID)
+		if err != nil {
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+			log.Printf("Error getting member: %v", err)
+			return
+		}
 	}
 
-	if user.Bot {
+	if member.User.Bot {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Вы не можете просмотреть профиль бота.")
 		return
 	}
 
-	member, err := db.GetUser(user.ID)
+	user, err := db.GetUser(member.User.ID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя.")
-		log.Printf("Error getting member: %v", err)
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
 		return
 	}
 
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title: "Профиль пользователя",
+				Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji, member.User.Username),
+				Description: msg.StructuredDescription{
+					Fields: []*msg.StructuredDescriptionField{
+						{
+							Emoji: msg.UsernameEmoji,
+							Name:  "Пользователь",
+							Value: member.Mention(),
+						},
+						{
+							Emoji: msg.JoinEmoji,
+							Name:  "Присоединился к серверу",
+							Value: fmt.Sprintf("<t:%v:R>", member.JoinedAt.Unix()),
+						},
+						{
+							Emoji: msg.ReputationEmoji,
+							Name:  "Репутация",
+							Value: strconv.Itoa(user.Reputation),
+						},
+						{
+							Emoji: msg.ReportEmoji,
+							Name:  "Отправленные репортов",
+							Value: strconv.Itoa(user.ReportsSentCount),
+						},
+					},
+				}.ToString(),
+				Thumbnail: &discordgo.MessageEmbedThumbnail{
+					URL: member.AvatarURL(""),
+				},
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: fmt.Sprintf("ID: %v", member.User.ID),
+				},
+				Color: msg.DefaultEmbedColor,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error creating followup message: %v", err)
+		return
+	}
+}
+
+func topChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	switch interactionCreate.ApplicationCommandData().Options[0].Name {
+	case "reputation":
+		topReputationChatCommandHandler(session, interactionCreate)
+	default:
+		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
+	}
+}
+
+func setReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	var targetUser *discordgo.User
+	var reputation int
+
+	for _, option := range interactionCreate.ApplicationCommandData().Options {
+		switch option.Name {
+		case "пользователь":
+			targetUser = option.UserValue(session)
+		case "репутация":
+			reputation = int(option.IntValue())
+		}
+	}
+
+	if targetUser == nil {
+		interactionRespondError(session, interactionCreate.Interaction, "Не указан пользователь.")
+		return
+	} else if reputation == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Не указана репутация.")
+		return
+	}
+
+	if targetUser.Bot {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете изменить репутацию бота.")
+		return
+	}
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	err = db.SetUserReputation(targetUser.ID, reputation)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при изменении репутации пользователя. Свяжитесь с администрацией.")
+		log.Printf("Error setting user reputation: %v", err)
+		return
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title: "Репутация изменена",
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "Пользователь",
-						Value: user.Mention(),
-					},
-					{
-						Name:  "ID пользователя",
-						Value: user.ID,
+						Value: msg.UserMention(targetUser),
 					},
 					{
 						Name:  "Репутация",
-						Value: strconv.Itoa(member.Reputation),
-					},
-					{
-						Name:  "Количство отправленных репортов",
-						Value: strconv.Itoa(member.ReportsSentCount),
+						Value: strconv.Itoa(reputation),
 					},
 				},
-				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL: user.AvatarURL(""),
-				},
-				Color: DefaultEmbedColor,
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 	})
