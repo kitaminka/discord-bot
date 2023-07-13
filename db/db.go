@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -12,7 +13,7 @@ var (
 )
 
 func ConnectMongo(mongoUri, mongoDatabaseName string) {
-	mongoClient, err := mongo.Connect(nil, options.Client().ApplyURI(mongoUri))
+	mongoClient, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoUri))
 	if err != nil {
 		log.Panicf("Error connecting to MongoDB: %v", err)
 	}
