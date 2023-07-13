@@ -11,6 +11,9 @@ const UserCollectionName = "users"
 
 const ReputationDelay = 40 * time.Minute
 
+var MaxReputation float64 = 1000000
+var MinReputation float64 = -1000000
+
 type User struct {
 	ID               string    `bson:"id,omitempty"`
 	Reputation       int       `bson:"reputation,omitempty"`
@@ -32,6 +35,10 @@ func GetUser(userID string) (User, error) {
 	return user, err
 }
 
+func SetUserReputation(userID string, reputation int) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"reputation", reputation}}}}, options.Update().SetUpsert(true))
+	return err
+}
 func ChangeUserReputation(userID string, change int) error {
 	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(nil, bson.D{{"id", userID}}, bson.D{{"$inc", bson.D{{"reputation", change}}}}, options.Update().SetUpsert(true))
 	return err

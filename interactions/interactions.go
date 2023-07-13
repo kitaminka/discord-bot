@@ -6,6 +6,7 @@ import (
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
 	"log"
+	"strconv"
 )
 
 var AdministratorPermission = int64(discordgo.PermissionAdministrator)
@@ -270,5 +271,78 @@ func topChatCommandHandler(session *discordgo.Session, interactionCreate *discor
 		topReputationChatCommandHandler(session, interactionCreate)
 	default:
 		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
+	}
+}
+
+func setReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	var targetUser *discordgo.User
+	var reputation int
+
+	for _, option := range interactionCreate.ApplicationCommandData().Options {
+		switch option.Name {
+		case "пользователь":
+			targetUser = option.UserValue(session)
+		case "репутация":
+			reputation = int(option.IntValue())
+		}
+	}
+
+	if targetUser == nil {
+		interactionRespondError(session, interactionCreate.Interaction, "Не указан пользователь.")
+		return
+	} else if reputation == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Не указана репутация.")
+		return
+	}
+
+	if targetUser.Bot {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете изменить репутацию бота.")
+		return
+	}
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	err = db.SetUserReputation(targetUser.ID, reputation)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при изменении репутации пользователя. Свяжитесь с администрацией.")
+		log.Printf("Error setting user reputation: %v", err)
+		return
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title: "Репутация изменена",
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:  "Пользователь",
+						Value: msg.UserMention(targetUser),
+					},
+					{
+						Name:  "Репутация",
+						Value: strconv.Itoa(reputation),
+					},
+				},
+				Color: msg.DefaultEmbedColor,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error creating followup message: %v", err)
+		return
 	}
 }

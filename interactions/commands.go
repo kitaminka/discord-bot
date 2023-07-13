@@ -2,6 +2,7 @@ package interactions
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
 	"log"
 )
 
@@ -179,6 +180,32 @@ var (
 				DMPermission: new(bool),
 			},
 			Handler: topChatCommandHandler,
+		},
+		"setreputation": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "setreputation",
+				Description: "Установить репутацию пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите установить репутацию",
+						Required:    true,
+					},
+					{
+						Type:        discordgo.ApplicationCommandOptionInteger,
+						MinValue:    &db.MinReputation,
+						MaxValue:    db.MaxReputation,
+						Name:        "репутация",
+						Description: "Репутация, которую вы хотите установить",
+						Required:    true,
+					},
+				},
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &AdministratorPermission,
+			},
+			Handler: setReputationChatCommandHandler,
 		},
 	}
 )
