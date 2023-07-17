@@ -10,10 +10,15 @@ import (
 
 const UserCollectionName = "users"
 
-const ReputationDelay = 40 * time.Minute
+const (
+	ReputationDelay   = 40 * time.Minute
+	DefaultReputation = 0
+)
 
-var MaxReputation float64 = 1000000
-var MinReputation float64 = -1000000
+var (
+	MaxReputation float64 = 1000000
+	MinReputation float64 = -1000000
+)
 
 type User struct {
 	ID               string    `bson:"id,omitempty"`
@@ -29,11 +34,16 @@ func GetUser(userID string) (User, error) {
 		return User{
 			ID:               userID,
 			ReputationDelay:  time.Time{},
-			Reputation:       0,
+			Reputation:       DefaultReputation,
 			ReportsSentCount: 0,
 		}, nil
 	}
 	return user, err
+}
+
+func RemoveUser(userID string) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).DeleteOne(context.Background(), bson.D{{"id", userID}})
+	return err
 }
 
 func SetUserReputation(userID string, reputation int) error {
@@ -50,12 +60,13 @@ func UpdateUserReputationDelay(userID string) error {
 	return err
 }
 func ResetUserReputationDelay(userID string) error {
-	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"reputationDelayEnd", time.Time{}}}}}, options.Update().SetUpsert(true))
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$unset", bson.D{{"reputationDelayEnd", nil}}}}, options.Update().SetUpsert(true))
 	return err
 }
 func GetUserReputationTop() (*[]User, error) {
 	users := &[]User{}
 	aggregate, err := MongoDatabase.Collection(UserCollectionName).Aggregate(context.Background(), mongo.Pipeline{
+		{{"$match", bson.D{{"reputation", bson.D{{"$exists", true}}}}}},
 		{{"$sort", bson.D{{"reputation", -1}}}},
 		{{"$limit", 10}},
 	})

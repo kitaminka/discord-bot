@@ -61,7 +61,13 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
-	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+	_, err := session.GuildMember(interactionCreate.GuildID, targetUser.ID)
+	if err != nil {
+		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v пользователю, который не находится на сервере.", action))
+		return
+	}
+
+	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags: discordgo.MessageFlagsEphemeral,

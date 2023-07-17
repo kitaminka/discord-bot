@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/interactions"
 )
 
@@ -12,6 +14,12 @@ var Handlers = []interface{}{
 			interactions.Commands[interactionCreate.ApplicationCommandData().Name].Handler(session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
 			interactions.ComponentHandlers[interactionCreate.MessageComponentData().CustomID](session, interactionCreate)
+		}
+	},
+	func(session *discordgo.Session, guildMemberRemove *discordgo.GuildMemberRemove) {
+		err := db.RemoveUser(guildMemberRemove.User.ID)
+		if err != nil {
+			fmt.Printf("Error removing user: %v", err)
 		}
 	},
 }
