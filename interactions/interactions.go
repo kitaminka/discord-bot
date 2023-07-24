@@ -82,7 +82,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 		return
 	}
 
-	guild, err := db.GetGuild(interactionCreate.GuildID)
+	guild, err := db.GetGuild()
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting guild: %v", err)
@@ -164,7 +164,14 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 	}
 
 	structuredDescription := msg.StructuredDescription{
-		Text: "Настройки сервера были успешно обновлены.",
+		Text: "Настройки сервера были успешно обновлены. Этот сервер установлен как основной.",
+		Fields: []*msg.StructuredDescriptionField{
+			{
+				Emoji: msg.IdEmoji,
+				Name:  "ID сервера",
+				Value: interactionCreate.GuildID,
+			},
+		},
 	}
 	server := db.Guild{
 		ID: interactionCreate.GuildID,

@@ -8,7 +8,7 @@ import (
 )
 
 func LogReputationChange(session *discordgo.Session, guildID string, user, targetUser *discordgo.User, change int) error {
-	guild, err := db.GetGuild(guildID)
+	guild, err := db.GetGuild()
 	if err != nil {
 		return err
 	}

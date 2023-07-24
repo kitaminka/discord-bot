@@ -36,7 +36,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		return
 	}
 
-	guild, err := db.GetGuild(interactionCreate.GuildID)
+	guild, err := db.GetGuild()
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при отправке вашего репорта. Свяжитесь с администрацией.")
 		log.Printf("Error getting server: %v", err)
@@ -135,7 +135,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
-	guild, err := db.GetGuild(interactionCreate.GuildID)
+	guild, err := db.GetGuild()
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error getting server: %v", err)
@@ -215,7 +215,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 		return
 	}
 
-	guild, err := db.GetGuild(interactionCreate.GuildID)
+	guild, err := db.GetGuild()
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error getting server: %v", err)

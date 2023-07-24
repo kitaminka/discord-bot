@@ -20,11 +20,16 @@ var (
 	MinReputation float64 = -1000000
 )
 
+type Warn struct {
+	Reason string    `bson:"reason,omitempty"`
+	Time   time.Time `bson:"time,omitempty"`
+}
 type User struct {
 	ID               string    `bson:"id,omitempty"`
 	Reputation       int       `bson:"reputation,omitempty"`
 	ReputationDelay  time.Time `bson:"reputationDelayEnd,omitempty"`
 	ReportsSentCount int       `bson:"reportsSentCount,omitempty"`
+	Warns            []Warn    `bson:"warns,omitempty"`
 }
 
 func GetUser(userID string) (User, error) {
