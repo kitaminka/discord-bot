@@ -13,6 +13,7 @@ const UserCollectionName = "users"
 const (
 	ReputationDelay   = 40 * time.Minute
 	DefaultReputation = 0
+	WarnDuration      = 36 * time.Hour
 )
 
 var (
@@ -21,8 +22,8 @@ var (
 )
 
 type Warn struct {
-	Reason string    `bson:"reason,omitempty"`
-	Time   time.Time `bson:"time,omitempty"`
+	Time        time.Time `bson:"time,omitempty"`
+	ModeratorID string    `bson:"moderatorId,omitempty"`
 }
 type User struct {
 	ID               string    `bson:"id,omitempty"`
@@ -84,5 +85,14 @@ func GetUserReputationTop() (*[]User, error) {
 
 func IncrementUserReportsSent(userID string) error {
 	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$inc", bson.D{{"reportsSentCount", 1}}}}, options.Update().SetUpsert(true))
+	return err
+}
+
+func AddUserWarn(userID string, warn Warn) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$push", bson.D{{"warns", warn}}}}, options.Update().SetUpsert(true))
+	return err
+}
+func RemoveUserWarn(userID string, warn Warn) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$pull", bson.D{{"warns", warn}}}}, options.Update().SetUpsert(true))
 	return err
 }

@@ -207,6 +207,22 @@ var (
 			},
 			Handler: setReputationChatCommandHandler,
 		},
+		"warn": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "warn",
+				Description: "Выдать предупреждение пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите выдать предупреждение",
+						Required:    true,
+					},
+				},
+			},
+			Handler: warnChatCommandHandler,
+		},
 	}
 )
 
