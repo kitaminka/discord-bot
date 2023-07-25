@@ -80,25 +80,25 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 
 	user, err := db.GetUser(interactionCreate.Member.User.ID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 		log.Printf("Error getting reputation delay: %v", err)
 		return
 	}
 	if !time.Now().After(user.ReputationDelay) {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, fmt.Sprintf("Вы сможете сделать это <t:%v:R>.", user.ReputationDelay.Unix()))
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, fmt.Sprintf("Вы сможете сделать это <t:%v:R>.", user.ReputationDelay.Unix()))
 		return
 	}
 
 	err = db.UpdateUserReputationDelay(user.ID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 		log.Printf("Error updating reputation delay: %v", err)
 		return
 	}
 
 	err = db.ChangeUserReputation(targetUser.ID, reputationChange)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 		log.Printf("Error changing user reputation: %v", err)
 		err = db.ResetUserReputationDelay(user.ID)
 		if err != nil {
@@ -119,18 +119,17 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		title = fmt.Sprintf("%v Дизлайк", msg.DislikeEmoji)
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:       title,
 				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, msg.UserMention(targetUser)),
 				Color:       msg.DefaultEmbedColor,
 			},
 		},
-		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
@@ -138,9 +137,6 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 func topReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
 	})
 	if err != nil {
 		log.Printf("Error responding to interaction: %v", err)
@@ -149,7 +145,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 
 	users, err := db.GetUserReputationTop()
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 		log.Printf("Error getting reputation top: %v", err)
 		return
 	}
@@ -159,7 +155,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		var discordUser *discordgo.User
 		discordUser, err = session.User(user.ID)
 		if err != nil {
-			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+			interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 			log.Printf("Error getting user: %v", err)
 			return
 		}
@@ -181,18 +177,17 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		})
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:  "Топ пользователей по репутации",
 				Fields: fields,
 				Color:  msg.DefaultEmbedColor,
 			},
 		},
-		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
@@ -241,13 +236,13 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 
 	err = db.SetUserReputation(targetUser.ID, reputation)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при изменении репутации пользователя. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при изменении репутации пользователя. Свяжитесь с администрацией.")
 		log.Printf("Error setting user reputation: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: "Репутация изменена",
 				Fields: []*discordgo.MessageEmbedField{
@@ -265,7 +260,7 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		},
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
