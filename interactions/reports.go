@@ -38,7 +38,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 
 	guild, err := db.GetGuild()
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при отправке вашего репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при отправке вашего репорта. Свяжитесь с администрацией.")
 		log.Printf("Error getting server: %v", err)
 		return
 	}
@@ -83,13 +83,13 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		},
 	})
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при отправке вашего репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при отправке вашего репорта. Свяжитесь с администрацией.")
 		log.Printf("Error sending report: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: fmt.Sprintf("%v Репорт отправлен", msg.ReportEmoji),
 				Description: msg.StructuredDescription{
@@ -110,10 +110,9 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 				Color: msg.DefaultEmbedColor,
 			},
 		},
-		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 	err = db.IncrementUserReportsSent(interactionCreate.Member.User.ID)
@@ -137,13 +136,13 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 
 	guild, err := db.GetGuild()
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error getting server: %v", err)
 		return
 	}
 
 	if len(interactionCreate.Message.Embeds) != 1 {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
 		log.Print("Report message is invalid")
 		return
 	}
@@ -172,7 +171,7 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		},
 	})
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error sending resolved report: %v", err)
 		return
 	}
@@ -182,23 +181,22 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		if err != nil {
 			log.Printf("Error deleting resolved report: %v", err)
 		}
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при рассмотрении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error deleting report: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:       "Репорт рассмотрен",
 				Description: "Репорт был успешно перемещен в рассмотренные.",
 				Color:       msg.DefaultEmbedColor,
 			},
 		},
-		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
@@ -217,13 +215,13 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 
 	guild, err := db.GetGuild()
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error getting server: %v", err)
 		return
 	}
 
 	if len(interactionCreate.Message.Embeds) != 1 {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
 		log.Print("Resolved report message is invalid")
 		return
 	}
@@ -247,7 +245,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 		},
 	})
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error sending report: %v", err)
 		return
 	}
@@ -257,23 +255,22 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 		if err != nil {
 			log.Printf("Error deleting report: %v", err)
 		}
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
 		log.Printf("Error deleting resolved report: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:       "Репорт возвращен",
 				Description: "Репорт был успешно возвращен в нерассмотренные.",
 				Color:       msg.DefaultEmbedColor,
 			},
 		},
-		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }

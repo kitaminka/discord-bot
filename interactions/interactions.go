@@ -36,13 +36,13 @@ func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate 
 
 	err = db.ResetUserReputationDelay(user.ID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при сбросе задержки.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при сбросе задержки.")
 		log.Printf("Error resetting user reputation delay: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:       "Задержка сброшена",
 				Description: fmt.Sprintf("Задержка пользователя %v была сброшена.", msg.UserMention(user)),
@@ -51,7 +51,7 @@ func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate 
 		},
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
@@ -84,32 +84,32 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 
 	guild, err := db.GetGuild()
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting guild: %v", err)
 		return
 	}
 
 	reportChannel, err := session.Channel(guild.ReportChannelID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting report channel: %v", err)
 		return
 	}
 	resolvedReportChannel, err := session.Channel(guild.ResoledReportChannelID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting resolved report channel: %v", err)
 		return
 	}
 	reputationLogChannel, err := session.Channel(guild.ReputationLogChannelID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting reputation log channel: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: "Настройки сервера",
 				Description: msg.StructuredDescription{
@@ -139,10 +139,9 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 				Color: msg.DefaultEmbedColor,
 			},
 		},
-		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
@@ -208,23 +207,22 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 
 	err = db.UpdateGuild(server)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при обновлении настроек сервера.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при обновлении настроек сервера.")
 		log.Printf("Error updating guild: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:       "Настройки сервера обновлены",
 				Description: structuredDescription.ToString(),
 				Color:       msg.DefaultEmbedColor,
 			},
 		},
-		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
@@ -247,7 +245,7 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 	if len(interactionCreate.ApplicationCommandData().TargetID) != 0 {
 		member, err = session.GuildMember(interactionCreate.GuildID, interactionCreate.ApplicationCommandData().TargetID)
 		if err != nil {
-			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+			interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
 			log.Printf("Error getting member: %v", err)
 			return
 		}
@@ -258,26 +256,26 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 
 		member, err = session.GuildMember(interactionCreate.GuildID, discordUser.ID)
 		if err != nil {
-			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+			interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
 			log.Printf("Error getting member: %v", err)
 			return
 		}
 	}
 
 	if member.User.Bot {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Вы не можете просмотреть профиль бота.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Вы не можете просмотреть профиль бота.")
 		return
 	}
 
 	user, err := db.GetUser(member.User.ID)
 	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
 		log.Printf("Error getting user: %v", err)
 		return
 	}
 
-	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, true, &discordgo.WebhookParams{
-		Embeds: []*discordgo.MessageEmbed{
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji, member.User.Username),
 				Description: msg.StructuredDescription{
@@ -315,7 +313,7 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		},
 	})
 	if err != nil {
-		log.Printf("Error creating followup message: %v", err)
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
