@@ -9,7 +9,10 @@ import (
 	"strconv"
 )
 
-var AdministratorPermission = int64(discordgo.PermissionAdministrator)
+var (
+	AdministratorPermission = int64(discordgo.PermissionAdministrator)
+	ModeratorPermission     = int64(discordgo.PermissionModerateMembers)
+)
 
 func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {

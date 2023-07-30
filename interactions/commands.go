@@ -220,8 +220,28 @@ var (
 						Required:    true,
 					},
 				},
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &ModeratorPermission,
 			},
 			Handler: warnChatCommandHandler,
+		},
+		"remwarn": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "remwarn",
+				Description: "Снять предупреждения пользователя",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, с которого вы хотите снять предупреждения",
+						Required:    true,
+					},
+				},
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &ModeratorPermission,
+			},
+			Handler: remWarnChatCommandHandler,
 		},
 	}
 )

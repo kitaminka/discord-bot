@@ -29,7 +29,7 @@ func dislikeChatCommandHandler(session *discordgo.Session, interactionCreate *di
 func reputationCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, like bool) {
 	var action string
 	var reputationChange int
-	var targetUser *discordgo.User
+	var discordUser *discordgo.User
 
 	if like {
 		action = "лайк"
@@ -41,27 +41,27 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 
 	if len(interactionCreate.ApplicationCommandData().Options) == 0 {
 		var err error
-		targetUser, err = session.User(interactionCreate.ApplicationCommandData().TargetID)
+		discordUser, err = session.User(interactionCreate.ApplicationCommandData().TargetID)
 		if err != nil {
 			interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 			log.Printf("Error getting user: %v", err)
 			return
 		}
 	} else {
-		targetUser = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
+		discordUser = interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
 	}
 
-	if interactionCreate.Member.User.ID == targetUser.ID {
+	if interactionCreate.Member.User.ID == discordUser.ID {
 		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v самому себе.", action))
 		return
 	}
 
-	if targetUser.Bot {
+	if discordUser.Bot {
 		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v боту.", action))
 		return
 	}
 
-	_, err := session.GuildMember(interactionCreate.GuildID, targetUser.ID)
+	_, err := session.GuildMember(interactionCreate.GuildID, discordUser.ID)
 	if err != nil {
 		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v пользователю, который не находится на сервере.", action))
 		return
@@ -96,7 +96,7 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
-	err = db.ChangeUserReputation(targetUser.ID, reputationChange)
+	err = db.ChangeUserReputation(discordUser.ID, reputationChange)
 	if err != nil {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 		log.Printf("Error changing user reputation: %v", err)
@@ -107,7 +107,7 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
-	err = logs.LogReputationChange(session, interactionCreate.Member.User, targetUser, reputationChange)
+	err = logs.LogReputationChange(session, interactionCreate.Member.User, discordUser, reputationChange)
 	if err != nil {
 		log.Printf("Error logging reputation change: %v", err)
 	}
@@ -123,7 +123,7 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:       title,
-				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, msg.UserMention(targetUser)),
+				Description: fmt.Sprintf("Вы поставили %v пользователю %v.", action, msg.UserMention(discordUser)),
 				Color:       msg.DefaultEmbedColor,
 			},
 		},
@@ -198,19 +198,19 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		return
 	}
 
-	var targetUser *discordgo.User
+	var discordUser *discordgo.User
 	var reputation int
 
 	for _, option := range interactionCreate.ApplicationCommandData().Options {
 		switch option.Name {
 		case "пользователь":
-			targetUser = option.UserValue(session)
+			discordUser = option.UserValue(session)
 		case "репутация":
 			reputation = int(option.IntValue())
 		}
 	}
 
-	if targetUser == nil {
+	if discordUser == nil {
 		interactionRespondError(session, interactionCreate.Interaction, "Не указан пользователь.")
 		return
 	} else if reputation == 0 {
@@ -218,7 +218,7 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		return
 	}
 
-	if targetUser.Bot {
+	if discordUser.Bot {
 		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете изменить репутацию бота.")
 		return
 	}
@@ -234,7 +234,7 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		return
 	}
 
-	err = db.SetUserReputation(targetUser.ID, reputation)
+	err = db.SetUserReputation(discordUser.ID, reputation)
 	if err != nil {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при изменении репутации пользователя. Свяжитесь с администрацией.")
 		log.Printf("Error setting user reputation: %v", err)
@@ -248,7 +248,7 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "Пользователь",
-						Value: msg.UserMention(targetUser),
+						Value: msg.UserMention(discordUser),
 					},
 					{
 						Name:  "Репутация",
