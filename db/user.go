@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -36,7 +37,7 @@ type User struct {
 func GetUser(userID string) (User, error) {
 	var user User
 	err := MongoDatabase.Collection(UserCollectionName).FindOne(context.Background(), bson.D{{"id", userID}}).Decode(&user)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return User{
 			ID:               userID,
 			ReputationDelay:  time.Time{},

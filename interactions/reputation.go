@@ -107,7 +107,7 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
-	err = logs.LogReputationChange(session, interactionCreate.GuildID, interactionCreate.Member.User, targetUser, reputationChange)
+	err = logs.LogReputationChange(session, interactionCreate.Member.User, targetUser, reputationChange)
 	if err != nil {
 		log.Printf("Error logging reputation change: %v", err)
 	}

@@ -3,6 +3,7 @@ package interactions
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/msg"
 	"log"
 	"time"
 )
@@ -41,5 +42,16 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	err = db.AddUserWarn(targetUser.ID, db.Warn{
 		Time:        time.Now(),
 		ModeratorID: interactionCreate.Member.User.ID,
+	})
+
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
+			{
+				Title: "Предупреждение выдано",
+				Description: msg.StructuredDescription{
+					Text: "Предупреждение успешно выдано.",
+				}.ToString(),
+			},
+		},
 	})
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/kitaminka/discord-bot/msg"
 )
 
-func LogReputationChange(session *discordgo.Session, guildID string, user, targetUser *discordgo.User, change int) error {
+func LogReputationChange(session *discordgo.Session, user, targetUser *discordgo.User, change int) error {
 	guild, err := db.GetGuild()
 	if err != nil {
 		return err
