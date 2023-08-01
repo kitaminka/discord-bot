@@ -12,6 +12,7 @@ const GuildsCollectionName = "guild"
 
 type Guild struct {
 	ID                     string `bson:"id,omitempty"`
+	LastWarningID          int    `bson:"lastWarningId,omitempty"`
 	ReportChannelID        string `bson:"reportChannelId,omitempty"`
 	ResoledReportChannelID string `bson:"resoledReportChannelId,omitempty"`
 	ReputationLogChannelID string `bson:"reputationLogChannelId,omitempty"`

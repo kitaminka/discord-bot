@@ -22,7 +22,7 @@ var (
 	MinReputation float64 = -1000000
 )
 
-type Warn struct {
+type Warning struct {
 	Time        time.Time `bson:"time,omitempty"`
 	ModeratorID string    `bson:"moderatorId,omitempty"`
 }
@@ -31,7 +31,7 @@ type User struct {
 	Reputation       int       `bson:"reputation,omitempty"`
 	ReputationDelay  time.Time `bson:"reputationDelayEnd,omitempty"`
 	ReportsSentCount int       `bson:"reportsSentCount,omitempty"`
-	Warns            []Warn    `bson:"warns,omitempty"`
+	Warnings         []Warning `bson:"warnings,omitempty"`
 }
 
 func GetUser(userID string) (User, error) {
@@ -89,11 +89,11 @@ func IncrementUserReportsSent(userID string) error {
 	return err
 }
 
-func AddUserWarn(userID string, warn Warn) error {
-	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$push", bson.D{{"warns", warn}}}}, options.Update().SetUpsert(true))
+func AddUserWarn(userID string, warn Warning) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$push", bson.D{{"warnings", warn}}}}, options.Update().SetUpsert(true))
 	return err
 }
-func RemoveUserWarn(userID string, warn Warn) error {
-	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$pull", bson.D{{"warns", warn}}}}, options.Update().SetUpsert(true))
+func RemoveUserWarn(userID string, warn Warning) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$pull", bson.D{{"warnings", warn}}}}, options.Update().SetUpsert(true))
 	return err
 }

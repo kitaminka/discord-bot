@@ -92,23 +92,48 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 		return
 	}
 
+	structuredDescriptionFields := []*msg.StructuredDescriptionField{
+		{
+			Emoji: msg.ShieldCheckMarkEmoji,
+			Name:  "ID сервера",
+			Value: guild.ID,
+		},
+		{
+			Emoji: msg.IdEmoji,
+			Name:  "ID последнего предупреждения",
+			Value: strconv.Itoa(guild.LastWarningID),
+		},
+	}
+
 	reportChannel, err := session.Channel(guild.ReportChannelID)
 	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting report channel: %v", err)
-		return
+	} else {
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredDescriptionField{
+			Emoji: msg.ReportEmoji,
+			Name:  "Канал для репортов",
+			Value: reportChannel.Mention(),
+		})
 	}
 	resolvedReportChannel, err := session.Channel(guild.ResoledReportChannelID)
 	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting resolved report channel: %v", err)
-		return
+	} else {
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredDescriptionField{
+			Emoji: msg.ShieldCheckMarkEmoji,
+			Name:  "Канал для рассмотренных репортов",
+			Value: resolvedReportChannel.Mention(),
+		})
 	}
 	reputationLogChannel, err := session.Channel(guild.ReputationLogChannelID)
 	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении настроек сервера.")
 		log.Printf("Error getting reputation log channel: %v", err)
-		return
+	} else {
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredDescriptionField{
+			Emoji: msg.ReputationEmoji,
+			Name:  "Канал для логирования репутации",
+			Value: reputationLogChannel.Mention(),
+		})
 	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
@@ -116,28 +141,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 			{
 				Title: "Настройки сервера",
 				Description: msg.StructuredDescription{
-					Fields: []*msg.StructuredDescriptionField{
-						{
-
-							Name:  "ID сервера",
-							Value: guild.ID,
-						},
-						{
-							Emoji: msg.ReportEmoji,
-							Name:  "Канал для репортов",
-							Value: reportChannel.Mention(),
-						},
-						{
-							Emoji: msg.ShieldCheckMarkEmoji,
-							Name:  "Канал для рассмотренные репортов",
-							Value: resolvedReportChannel.Mention(),
-						},
-						{
-							Emoji: msg.ReputationEmoji,
-							Name:  "Канал для логирования репутации",
-							Value: reputationLogChannel.Mention(),
-						},
-					},
+					Fields: structuredDescriptionFields,
 				}.ToString(),
 				Color: msg.DefaultEmbedColor,
 			},

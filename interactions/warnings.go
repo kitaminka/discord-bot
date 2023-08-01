@@ -6,7 +6,7 @@ import (
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
 	"log"
-	"strconv"
+	"strings"
 	"time"
 )
 
@@ -41,7 +41,7 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	err = db.AddUserWarn(discordUser.ID, db.Warn{
+	err = db.AddUserWarn(discordUser.ID, db.Warning{
 		Time:        time.Now(),
 		ModeratorID: interactionCreate.Member.User.ID,
 	})
@@ -97,12 +97,17 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		return
 	}
 
+	if len(user.Warnings) == 0 {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "У данного пользователя нет предупреждений.")
+		return
+	}
+
 	var selectMenuOptions []discordgo.SelectMenuOption
 
-	for i, warn := range user.Warns {
+	for i, warn := range user.Warnings {
 		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
 			Label:       fmt.Sprintf("Предупреждение #%v", i+1),
-			Value:       strconv.FormatInt(warn.Time.Unix(), 10),
+			Value:       fmt.Sprintf("%v_%v", user.ID, warn.Time),
 			Description: "Пред",
 			Emoji: discordgo.ComponentEmoji{
 				Name: "report",
@@ -124,7 +129,7 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 				Components: []discordgo.MessageComponent{
 					discordgo.SelectMenu{
 						MenuType:    discordgo.StringSelectMenu,
-						CustomID:    "remWarnSelect",
+						CustomID:    "remove_warning",
 						Placeholder: "Выберите предупреждение",
 						Options:     selectMenuOptions,
 					},
@@ -136,4 +141,26 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
+}
+
+func removeWarningHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	componentValue := interactionCreate.MessageComponentData().Values[0]
+
+	userID := strings.Split(componentValue, "_")[0]
+	warnTimeString := strings.Split(componentValue, "_")[1]
+
+	warnTime, _ := time.Parse(time.RFC3339, warnTimeString)
+
+	fmt.Println(warnTime)
+
+	err := db.RemoveUserWarn(userID, db.Warning{
+		Time: warnTime,
+	})
+
+	fmt.Println(err)
 }
