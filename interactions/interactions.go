@@ -118,7 +118,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 				Description: msg.StructuredDescription{
 					Fields: []*msg.StructuredDescriptionField{
 						{
-							Emoji: msg.IdEmoji,
+
 							Name:  "ID сервера",
 							Value: guild.ID,
 						},

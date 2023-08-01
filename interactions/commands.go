@@ -243,6 +243,30 @@ var (
 			},
 			Handler: remWarnChatCommandHandler,
 		},
+		"mute": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:        discordgo.ChatApplicationCommand,
+				Name:        "mute",
+				Description: "Выдать мут пользователю",
+				Options: []*discordgo.ApplicationCommandOption{
+					{
+						Type:        discordgo.ApplicationCommandOptionUser,
+						Name:        "пользователь",
+						Description: "Пользователь, которому вы хотите выдать мут",
+						Required:    true,
+					},
+					{
+						Type:        discordgo.ApplicationCommandOptionString,
+						Name:        "длительность",
+						Description: "Длительность мута",
+						Required:    true,
+					},
+				},
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &ModeratorPermission,
+			},
+			Handler: muteChatCommandHandler,
+		},
 	}
 )
 

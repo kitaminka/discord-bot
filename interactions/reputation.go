@@ -160,7 +160,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 			return
 		}
 
-		var PlaceEmoji msg.Emoji
+		var PlaceEmoji discordgo.Emoji
 
 		switch i {
 		case 0:
@@ -172,8 +172,8 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		}
 
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:  fmt.Sprintf("%v #%v. %v", PlaceEmoji, i+1, discordUser.Username),
-			Value: fmt.Sprintf("%v **Репутация**: %v", msg.ReputationEmoji, user.Reputation),
+			Name:  fmt.Sprintf("%v #%v. %v", PlaceEmoji.MessageFormat(), i+1, discordUser.Username),
+			Value: fmt.Sprintf("%v **Репутация**: %v", msg.ReputationEmoji.MessageFormat(), user.Reputation),
 		})
 	}
 

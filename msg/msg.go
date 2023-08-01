@@ -1,13 +1,16 @@
 package msg
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/bwmarrin/discordgo"
+)
 
 type StructuredDescription struct {
 	Text   string
 	Fields []*StructuredDescriptionField
 }
 type StructuredDescriptionField struct {
-	Emoji Emoji
+	Emoji discordgo.Emoji
 	Name  string
 	Value string
 }
@@ -20,8 +23,10 @@ func (structuredDescription StructuredDescription) ToString() string {
 	}
 
 	for _, field := range structuredDescription.Fields {
-		if field.Emoji != "" {
-			result += fmt.Sprintf("%v **%v**: %v\n", field.Emoji, field.Name, field.Value)
+		messageEmoji := field.Emoji.MessageFormat()
+
+		if len(messageEmoji) != 0 {
+			result += fmt.Sprintf("%v **%v**: %v\n", messageEmoji, field.Name, field.Value)
 		} else {
 			result += fmt.Sprintf("**%v**: %v\n", field.Name, field.Value)
 		}

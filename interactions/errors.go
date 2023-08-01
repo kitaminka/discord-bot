@@ -9,7 +9,7 @@ import (
 
 func createErrorEmbed(errorMessage string) *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("%v Ошибка", msg.ErrorEmoji),
+		Title:       fmt.Sprintf("%v Ошибка", msg.ErrorEmoji.MessageFormat()),
 		Description: errorMessage,
 		Color:       msg.ErrorEmbedColor,
 	}
