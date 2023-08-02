@@ -101,7 +101,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 		{
 			Emoji: msg.IdEmoji,
 			Name:  "ID последнего предупреждения",
-			Value: strconv.Itoa(guild.LastWarningID),
+			Value: strconv.FormatUint(guild.LastWarningID, 10),
 		},
 	}
 

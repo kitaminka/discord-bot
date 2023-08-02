@@ -6,13 +6,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const GuildsCollectionName = "guild"
+const GuildCollectionName = "guild"
 
 // Only main guild in this collection
 
 type Guild struct {
 	ID                     string `bson:"id,omitempty"`
-	LastWarningID          int    `bson:"lastWarningId,omitempty"`
+	LastWarningID          uint64 `bson:"lastWarningId,omitempty"`
 	ReportChannelID        string `bson:"reportChannelId,omitempty"`
 	ResoledReportChannelID string `bson:"resoledReportChannelId,omitempty"`
 	ReputationLogChannelID string `bson:"reputationLogChannelId,omitempty"`
@@ -20,10 +20,14 @@ type Guild struct {
 
 func GetGuild() (Guild, error) {
 	var server Guild
-	err := MongoDatabase.Collection(GuildsCollectionName).FindOne(context.Background(), bson.D{}).Decode(&server)
+	err := MongoDatabase.Collection(GuildCollectionName).FindOne(context.Background(), bson.D{}).Decode(&server)
 	return server, err
 }
 func UpdateGuild(server Guild) error {
-	_, err := MongoDatabase.Collection(GuildsCollectionName).UpdateOne(context.Background(), bson.D{}, bson.D{{"$set", server}}, options.Update().SetUpsert(true))
+	_, err := MongoDatabase.Collection(GuildCollectionName).UpdateOne(context.Background(), bson.D{}, bson.D{{"$set", server}}, options.Update().SetUpsert(true))
+	return err
+}
+func IncrementLastWarningID() error {
+	_, err := MongoDatabase.Collection(GuildCollectionName).UpdateOne(context.Background(), bson.D{}, bson.D{{"$inc", bson.D{{"lastWarningId", 1}}}}, options.Update().SetUpsert(true))
 	return err
 }

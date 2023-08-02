@@ -151,7 +151,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 	}
 
 	var fields []*discordgo.MessageEmbedField
-	for i, user := range *users {
+	for i, user := range users {
 		var discordUser *discordgo.User
 		discordUser, err = session.User(user.ID)
 		if err != nil {

@@ -6,7 +6,7 @@ import (
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
 	"log"
-	"strings"
+	"strconv"
 	"time"
 )
 
@@ -41,8 +41,24 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	err = db.AddUserWarn(discordUser.ID, db.Warning{
+	err = db.IncrementLastWarningID()
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error incrementing last warning ID: %v", err)
+		return
+	}
+
+	guild, err := db.GetGuild()
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error getting guild: %v", err)
+		return
+	}
+
+	err = db.AddUserWarning(db.Warning{
+		ID:          guild.LastWarningID,
 		Time:        time.Now(),
+		UserID:      discordUser.ID,
 		ModeratorID: interactionCreate.Member.User.ID,
 	})
 
@@ -90,28 +106,28 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		return
 	}
 
-	user, err := db.GetUser(discordUser.ID)
+	warnings, err := db.GetUserWarnings(discordUser.ID)
 	if err != nil {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
 		log.Printf("Error getting user: %v", err)
 		return
 	}
 
-	if len(user.Warnings) == 0 {
+	if len(warnings) == 0 {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "У данного пользователя нет предупреждений.")
 		return
 	}
 
 	var selectMenuOptions []discordgo.SelectMenuOption
 
-	for i, warn := range user.Warnings {
+	for _, warn := range warnings {
 		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
-			Label:       fmt.Sprintf("Предупреждение #%v", i+1),
-			Value:       fmt.Sprintf("%v_%v", user.ID, warn.Time),
+			Label:       fmt.Sprintf("Предупреждение #%v", warn.ID),
+			Value:       strconv.FormatUint(warn.ID, 10),
 			Description: "Пред",
 			Emoji: discordgo.ComponentEmoji{
-				Name: "report",
-				ID:   "1128761333014347890",
+				Name: msg.ReportEmoji.Name,
+				ID:   msg.ReportEmoji.ID,
 			},
 		})
 	}
@@ -151,16 +167,14 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 
 	componentValue := interactionCreate.MessageComponentData().Values[0]
 
-	userID := strings.Split(componentValue, "_")[0]
-	warnTimeString := strings.Split(componentValue, "_")[1]
+	warnID, err := strconv.ParseUint(componentValue, 10, 64)
+	if err != nil {
+		interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error parsing warning ID: %v", err)
+		return
+	}
 
-	warnTime, _ := time.Parse(time.RFC3339, warnTimeString)
-
-	fmt.Println(warnTime)
-
-	err := db.RemoveUserWarn(userID, db.Warning{
-		Time: warnTime,
-	})
+	err = db.RemoveWarning(warnID)
 
 	fmt.Println(err)
 }
