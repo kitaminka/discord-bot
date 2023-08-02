@@ -39,10 +39,11 @@ func interactionResponseErrorEdit(session *discordgo.Session, interaction *disco
 	}
 }
 func followupErrorMessageCreate(session *discordgo.Session, interaction *discordgo.Interaction, errorMessage string) {
-	_, err := session.InteractionResponseEdit(interaction, &discordgo.WebhookEdit{
-		Embeds: &[]*discordgo.MessageEmbed{
+	_, err := session.FollowupMessageCreate(interaction, false, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
 			createErrorEmbed(errorMessage),
 		},
+		Flags: discordgo.MessageFlagsEphemeral,
 	})
 	if err != nil {
 		log.Printf("Error sending message: %v", err)

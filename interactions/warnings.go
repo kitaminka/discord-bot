@@ -60,6 +60,29 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	})
 }
 
+func createRemWarnSelectMenu(warnings []db.Warning) discordgo.SelectMenu {
+	var selectMenuOptions []discordgo.SelectMenuOption
+
+	for i, warn := range warnings {
+		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
+			Label:       fmt.Sprintf("Предупреждение #%v", i+1),
+			Value:       warn.ID.Hex(),
+			Description: "Пред",
+			Emoji: discordgo.ComponentEmoji{
+				Name: msg.ReportEmoji.Name,
+				ID:   msg.ReportEmoji.ID,
+			},
+		})
+	}
+
+	return discordgo.SelectMenu{
+		MenuType:    discordgo.StringSelectMenu,
+		CustomID:    "remove_warning",
+		Placeholder: "Выберите предупреждение",
+		Options:     selectMenuOptions,
+	}
+}
+
 func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
 		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
@@ -103,20 +126,6 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		return
 	}
 
-	var selectMenuOptions []discordgo.SelectMenuOption
-
-	for i, warn := range warnings {
-		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
-			Label:       fmt.Sprintf("Предупреждение #%v", i+1),
-			Value:       warn.ID.Hex(),
-			Description: "Пред",
-			Emoji: discordgo.ComponentEmoji{
-				Name: msg.ReportEmoji.Name,
-				ID:   msg.ReportEmoji.ID,
-			},
-		})
-	}
-
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
@@ -128,12 +137,7 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		Components: &[]discordgo.MessageComponent{
 			&discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					discordgo.SelectMenu{
-						MenuType:    discordgo.StringSelectMenu,
-						CustomID:    "remove_warning",
-						Placeholder: "Выберите предупреждение",
-						Options:     selectMenuOptions,
-					},
+					createRemWarnSelectMenu(warnings),
 				},
 			},
 		},
@@ -159,7 +163,68 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
-	err = db.RemoveWarning(warnID)
+	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
 
-	fmt.Println(err)
+	warning, err := db.RemoveWarning(warnID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error removing warning: %v", err)
+		return
+	}
+	warnings, err := db.GetUserWarnings(warning.UserID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error getting user warnings: %v", err)
+		return
+	}
+
+	if len(warnings) == 0 {
+		_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+			Embeds: &[]*discordgo.MessageEmbed{
+				{
+					Title:       "Предупреждения отсутствуют",
+					Description: "Все предупреждения данного пользователя сняты.",
+					Color:       msg.DefaultEmbedColor,
+				},
+			},
+			Components: &[]discordgo.MessageComponent{},
+		})
+	} else {
+		_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+			Embeds: &interactionCreate.Message.Embeds,
+			Components: &[]discordgo.MessageComponent{
+				&discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						createRemWarnSelectMenu(warnings),
+					},
+				},
+			},
+		})
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title: "Предупреждение снято",
+				Description: msg.StructuredDescription{
+					Text: "Предупреждение снято.",
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
+			},
+		},
+		Flags: discordgo.MessageFlagsEphemeral,
+	})
+	if err != nil {
+		log.Printf("Error creating followup message: %v", err)
+		return
+	}
 }

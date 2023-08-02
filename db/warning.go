@@ -23,9 +23,10 @@ func AddUserWarning(warn Warning) error {
 	_, err := MongoDatabase.Collection(WarningCollectionName).InsertOne(context.Background(), warn)
 	return err
 }
-func RemoveWarning(warnID primitive.ObjectID) error {
-	_, err := MongoDatabase.Collection(WarningCollectionName).DeleteOne(context.Background(), bson.D{{"_id", warnID}})
-	return err
+func RemoveWarning(warnID primitive.ObjectID) (Warning, error) {
+	var warning Warning
+	err := MongoDatabase.Collection(WarningCollectionName).FindOneAndDelete(context.Background(), bson.D{{"_id", warnID}}).Decode(&warning)
+	return warning, err
 }
 func RemoveUserWarnings(userID string) error {
 	_, err := MongoDatabase.Collection(WarningCollectionName).DeleteMany(context.Background(), bson.D{{"userId", userID}})
