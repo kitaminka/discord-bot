@@ -12,7 +12,6 @@ const GuildCollectionName = "guild"
 
 type Guild struct {
 	ID                     string `bson:"id,omitempty"`
-	LastWarningID          uint64 `bson:"lastWarningId,omitempty"`
 	ReportChannelID        string `bson:"reportChannelId,omitempty"`
 	ResoledReportChannelID string `bson:"resoledReportChannelId,omitempty"`
 	ReputationLogChannelID string `bson:"reputationLogChannelId,omitempty"`
@@ -25,9 +24,5 @@ func GetGuild() (Guild, error) {
 }
 func UpdateGuild(server Guild) error {
 	_, err := MongoDatabase.Collection(GuildCollectionName).UpdateOne(context.Background(), bson.D{}, bson.D{{"$set", server}}, options.Update().SetUpsert(true))
-	return err
-}
-func IncrementLastWarningID() error {
-	_, err := MongoDatabase.Collection(GuildCollectionName).UpdateOne(context.Background(), bson.D{}, bson.D{{"$inc", bson.D{{"lastWarningId", 1}}}}, options.Update().SetUpsert(true))
 	return err
 }

@@ -5,8 +5,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -41,22 +41,7 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	err = db.IncrementLastWarningID()
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error incrementing last warning ID: %v", err)
-		return
-	}
-
-	guild, err := db.GetGuild()
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
 	err = db.AddUserWarning(db.Warning{
-		ID:          guild.LastWarningID,
 		Time:        time.Now(),
 		UserID:      discordUser.ID,
 		ModeratorID: interactionCreate.Member.User.ID,
@@ -120,10 +105,10 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 
 	var selectMenuOptions []discordgo.SelectMenuOption
 
-	for _, warn := range warnings {
+	for i, warn := range warnings {
 		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
-			Label:       fmt.Sprintf("Предупреждение #%v", warn.ID),
-			Value:       strconv.FormatUint(warn.ID, 10),
+			Label:       fmt.Sprintf("Предупреждение #%v", i+1),
+			Value:       warn.ID.Hex(),
 			Description: "Пред",
 			Emoji: discordgo.ComponentEmoji{
 				Name: msg.ReportEmoji.Name,
@@ -167,10 +152,10 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 
 	componentValue := interactionCreate.MessageComponentData().Values[0]
 
-	warnID, err := strconv.ParseUint(componentValue, 10, 64)
+	warnID, err := primitive.ObjectIDFromHex(componentValue)
 	if err != nil {
 		interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error parsing warning ID: %v", err)
+		log.Printf("Error creating object ID: %v", err)
 		return
 	}
 

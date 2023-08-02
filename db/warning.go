@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
@@ -12,18 +13,18 @@ const (
 )
 
 type Warning struct {
-	ID          uint64    `bson:"id,omitempty"`
-	Time        time.Time `bson:"time,omitempty"`
-	UserID      string    `bson:"userId,omitempty"`
-	ModeratorID string    `bson:"moderatorId,omitempty"`
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
+	Time        time.Time          `bson:"time,omitempty"`
+	UserID      string             `bson:"userId,omitempty"`
+	ModeratorID string             `bson:"moderatorId,omitempty"`
 }
 
 func AddUserWarning(warn Warning) error {
 	_, err := MongoDatabase.Collection(WarningCollectionName).InsertOne(context.Background(), warn)
 	return err
 }
-func RemoveWarning(warnID uint64) error {
-	_, err := MongoDatabase.Collection(WarningCollectionName).DeleteOne(context.Background(), bson.D{{"id", warnID}})
+func RemoveWarning(warnID primitive.ObjectID) error {
+	_, err := MongoDatabase.Collection(WarningCollectionName).DeleteOne(context.Background(), bson.D{{"_id", warnID}})
 	return err
 }
 func RemoveUserWarnings(userID string) error {

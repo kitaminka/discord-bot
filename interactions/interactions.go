@@ -98,11 +98,6 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 			Name:  "ID сервера",
 			Value: guild.ID,
 		},
-		{
-			Emoji: msg.IdEmoji,
-			Name:  "ID последнего предупреждения",
-			Value: strconv.FormatUint(guild.LastWarningID, 10),
-		},
 	}
 
 	reportChannel, err := session.Channel(guild.ReportChannelID)
