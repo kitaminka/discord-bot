@@ -69,6 +69,8 @@ func guildChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 		guildViewChatCommandHandler(session, interactionCreate)
 	case "update":
 		guildUpdateChatCommandHandler(session, interactionCreate)
+	case "rules":
+		guildRulesChatCommandHandler(session, interactionCreate)
 	default:
 		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
 	}
@@ -227,6 +229,76 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
+}
+func guildRulesChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	switch interactionCreate.ApplicationCommandData().Options[0].Options[0].Name {
+	case "add":
+		guildRulesAddChatCommandHandler(session, interactionCreate)
+	case "view":
+		guildRulesViewChatCommandHandler(session, interactionCreate)
+	}
+}
+func guildRulesAddChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	var name, description string
+
+	for _, option := range interactionCreate.ApplicationCommandData().Options[0].Options[0].Options {
+		switch option.Name {
+		case "название":
+			name = option.StringValue()
+		case "описание":
+			description = option.StringValue()
+		}
+	}
+
+	err = db.AddGuildRule(db.Rule{
+		Name:        name,
+		Description: description,
+	})
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при добавлении правила.")
+		log.Printf("Error adding guild rule: %v", err)
+		return
+	}
+
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
+			{
+				Title: "Правило добавлено",
+				Description: msg.StructuredDescription{
+					Text: "Правило было успешно добавлено.",
+					Fields: []*msg.StructuredDescriptionField{
+						{
+							Name:  "Название",
+							Value: name,
+						},
+						{
+							Name:  "Описание",
+							Value: description,
+						},
+					},
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error editing interaction response: %v", err)
+		return
+	}
+}
+func guildRulesViewChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+
 }
 
 // Used for user command and chat command

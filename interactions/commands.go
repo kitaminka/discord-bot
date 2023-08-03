@@ -66,6 +66,37 @@ var (
 						Name:        "view",
 						Description: "Просмотреть настройки сервера",
 					},
+					{
+						Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
+						Name:        "rules",
+						Description: "Управление правилами сервера",
+						Options: []*discordgo.ApplicationCommandOption{
+							{
+								Type:        discordgo.ApplicationCommandOptionSubCommand,
+								Name:        "add",
+								Description: "Добавить правило",
+								Options: []*discordgo.ApplicationCommandOption{
+									{
+										Type:        discordgo.ApplicationCommandOptionString,
+										Name:        "название",
+										Description: "Короткое название правила",
+										Required:    true,
+									},
+									{
+										Type:        discordgo.ApplicationCommandOptionString,
+										Name:        "описание",
+										Description: "Описание правила",
+										Required:    true,
+									},
+								},
+							},
+							{
+								Type:        discordgo.ApplicationCommandOptionSubCommand,
+								Name:        "view",
+								Description: "Просмотреть правила",
+							},
+						},
+					},
 				},
 				DMPermission:             new(bool),
 				DefaultMemberPermissions: &AdministratorPermission,
