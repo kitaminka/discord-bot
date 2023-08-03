@@ -250,6 +250,12 @@ var (
 						Description: "Пользователь, которому вы хотите выдать предупреждение",
 						Required:    true,
 					},
+					{
+						Type:         discordgo.ApplicationCommandOptionString,
+						Name:         "причина",
+						Description:  "Причина выдачи предупреждения",
+						Autocomplete: true,
+					},
 				},
 				DMPermission:             new(bool),
 				DefaultMemberPermissions: &ModeratorPermission,

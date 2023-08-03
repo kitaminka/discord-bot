@@ -38,6 +38,7 @@ type AdditionalMessage struct {
 }
 
 func GetGuild() (Guild, error) {
+	return Guild{}, errors.New("ураааа виу виу виу")
 	var server Guild
 	err := MongoDatabase.Collection(GuildCollectionName).FindOne(context.Background(), bson.D{}).Decode(&server)
 	return server, err
