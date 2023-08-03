@@ -25,6 +25,7 @@ type User struct {
 	Reputation       int       `bson:"reputation,omitempty"`
 	ReputationDelay  time.Time `bson:"reputationDelayEnd,omitempty"`
 	ReportsSentCount int       `bson:"reportsSentCount,omitempty"`
+	Moderator        bool      `bson:"moderator,omitempty"`
 }
 
 func GetUser(userID string) (User, error) {
@@ -36,6 +37,7 @@ func GetUser(userID string) (User, error) {
 			ReputationDelay:  time.Time{},
 			Reputation:       DefaultReputation,
 			ReportsSentCount: 0,
+			Moderator:        false,
 		}, nil
 	}
 	return user, err

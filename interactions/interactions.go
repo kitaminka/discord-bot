@@ -64,7 +64,7 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
-				Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji, member.User.Username),
+				Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji.MessageFormat(), member.User.Username),
 				Description: msg.StructuredDescription{
 					Fields: []*msg.StructuredDescriptionField{
 						{

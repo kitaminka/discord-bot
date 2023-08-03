@@ -114,9 +114,9 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 
 	var title string
 	if like {
-		title = fmt.Sprintf("%v Лайк", msg.LikeEmoji)
+		title = fmt.Sprintf("%v Лайк", msg.LikeEmoji.MessageFormat())
 	} else {
-		title = fmt.Sprintf("%v Дизлайк", msg.DislikeEmoji)
+		title = fmt.Sprintf("%v Дизлайк", msg.DislikeEmoji.MessageFormat())
 	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{

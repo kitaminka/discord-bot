@@ -180,6 +180,7 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		return
 	}
 }
+
 func guildRulesChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	switch interactionCreate.ApplicationCommandData().Options[0].Options[0].Name {
 	case "add":

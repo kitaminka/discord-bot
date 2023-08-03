@@ -18,22 +18,16 @@ var (
 // Only main guild in this collection
 
 type Guild struct {
-	ID                     string              `bson:"id,omitempty"`
-	ReportChannelID        string              `bson:"reportChannelId,omitempty"`
-	ResoledReportChannelID string              `bson:"resoledReportChannelId,omitempty"`
-	ReputationLogChannelID string              `bson:"reputationLogChannelId,omitempty"`
-	Rules                  []Rule              `bson:"rules,omitempty"`
-	AdditionalMessages     []AdditionalMessage `bson:"additionalMessages,omitempty"`
+	ID                     string `bson:"id,omitempty"`
+	ReportChannelID        string `bson:"reportChannelId,omitempty"`
+	ResoledReportChannelID string `bson:"resoledReportChannelId,omitempty"`
+	ReputationLogChannelID string `bson:"reputationLogChannelId,omitempty"`
+	Rules                  []Rule `bson:"rules,omitempty"`
 }
 
 type Rule struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"`
 	Name        string             `bson:"name,omitempty"`
-	Description string             `bson:"description,omitempty"`
-}
-type AdditionalMessage struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty"`
-	Message     string             `bson:"message,omitempty"`
 	Description string             `bson:"description,omitempty"`
 }
 

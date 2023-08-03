@@ -255,6 +255,7 @@ var (
 						Name:         "причина",
 						Description:  "Причина выдачи предупреждения",
 						Autocomplete: true,
+						Required:     true,
 					},
 				},
 				DMPermission:             new(bool),
