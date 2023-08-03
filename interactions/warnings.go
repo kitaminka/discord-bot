@@ -41,8 +41,10 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
+	warnTime := time.Now()
+
 	err = db.AddUserWarning(db.Warning{
-		Time:        time.Now(),
+		Time:        warnTime,
 		UserID:      discordUser.ID,
 		ModeratorID: interactionCreate.Member.User.ID,
 	})
@@ -53,6 +55,20 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 				Title: "Предупреждение выдано",
 				Description: msg.StructuredDescription{
 					Text: "Предупреждение успешно выдано.",
+					Fields: []*msg.StructuredDescriptionField{
+						{
+							Name:  "Время выдачи",
+							Value: fmt.Sprintf("<t:%v>", warnTime.Unix()),
+						},
+						{
+							Name:  "Пользователь",
+							Value: msg.UserMention(discordUser),
+						},
+						{
+							Name:  "Модератор",
+							Value: msg.UserMention(interactionCreate.Member.User),
+						},
+					},
 				}.ToString(),
 				Color: msg.DefaultEmbedColor,
 			},
@@ -60,14 +76,19 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	})
 }
 
-func createRemWarnSelectMenu(warnings []db.Warning) discordgo.SelectMenu {
+func createRemWarnSelectMenu(session *discordgo.Session, warnings []db.Warning) (discordgo.SelectMenu, error) {
 	var selectMenuOptions []discordgo.SelectMenuOption
 
 	for i, warn := range warnings {
+		moderatorDiscordUser, err := session.User(warn.ModeratorID)
+		if err != nil {
+			return discordgo.SelectMenu{}, err
+		}
+
 		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
-			Label:       fmt.Sprintf("Предупреждение #%v", i+1),
+			Label:       fmt.Sprintf("Предупреждение #%v от %v", i+1, moderatorDiscordUser.Username),
 			Value:       warn.ID.Hex(),
-			Description: "Пред",
+			Description: fmt.Sprintf("Айди: %v", warn.ID.Hex()),
 			Emoji: discordgo.ComponentEmoji{
 				Name: msg.ReportEmoji.Name,
 				ID:   msg.ReportEmoji.ID,
@@ -80,7 +101,7 @@ func createRemWarnSelectMenu(warnings []db.Warning) discordgo.SelectMenu {
 		CustomID:    "remove_warning",
 		Placeholder: "Выберите предупреждение",
 		Options:     selectMenuOptions,
-	}
+	}, nil
 }
 
 func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -116,13 +137,28 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 
 	warnings, err := db.GetUserWarnings(discordUser.ID)
 	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждений. Свяжитесь с администрацией.")
 		log.Printf("Error getting user: %v", err)
 		return
 	}
 
 	if len(warnings) == 0 {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "У данного пользователя нет предупреждений.")
+		_, _ = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+			Embeds: &[]*discordgo.MessageEmbed{
+				{
+					Title:       "Предупреждения отсутствуют",
+					Description: "У данного пользователя нет предупреждений.",
+					Color:       msg.DefaultEmbedColor,
+				},
+			},
+		})
+		return
+	}
+
+	remWarnSelectMenu, err := createRemWarnSelectMenu(session, warnings)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error creating select menu: %v", err)
 		return
 	}
 
@@ -137,7 +173,7 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		Components: &[]discordgo.MessageComponent{
 			&discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					createRemWarnSelectMenu(warnings),
+					remWarnSelectMenu,
 				},
 			},
 		},
@@ -180,6 +216,18 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 		log.Printf("Error removing warning: %v", err)
 		return
 	}
+	discordUser, err := session.User(warning.UserID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
+		return
+	}
+	moderatorDiscordUser, err := session.User(warning.ModeratorID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
+		return
+	}
 	warnings, err := db.GetUserWarnings(warning.UserID)
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
@@ -188,27 +236,32 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 	}
 
 	if len(warnings) == 0 {
-		_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		_, _ = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 			Embeds: &[]*discordgo.MessageEmbed{
 				{
 					Title:       "Предупреждения отсутствуют",
-					Description: "Все предупреждения данного пользователя сняты.",
+					Description: "У данного пользователя нет предупреждений.",
 					Color:       msg.DefaultEmbedColor,
 				},
 			},
 			Components: &[]discordgo.MessageComponent{},
 		})
 	} else {
-		_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-			Embeds: &interactionCreate.Message.Embeds,
-			Components: &[]discordgo.MessageComponent{
-				&discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{
-						createRemWarnSelectMenu(warnings),
+		remWarnSelectMenu, err := createRemWarnSelectMenu(session, warnings)
+		if err != nil {
+			log.Printf("Error creating select menu: %v", err)
+		} else {
+			_, _ = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+				Embeds: &interactionCreate.Message.Embeds,
+				Components: &[]discordgo.MessageComponent{
+					&discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{
+							remWarnSelectMenu,
+						},
 					},
 				},
-			},
-		})
+			})
+		}
 	}
 
 	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
@@ -217,6 +270,24 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 				Title: "Предупреждение снято",
 				Description: msg.StructuredDescription{
 					Text: "Предупреждение снято.",
+					Fields: []*msg.StructuredDescriptionField{
+						{
+							Name:  "ID",
+							Value: warning.ID.Hex(),
+						},
+						{
+							Name:  "Время выдачи",
+							Value: fmt.Sprintf("<t:%v>", warning.Time.Unix()),
+						},
+						{
+							Name:  "Пользователь",
+							Value: msg.UserMention(discordUser),
+						},
+						{
+							Name:  "Модератор",
+							Value: msg.UserMention(moderatorDiscordUser),
+						},
+					},
 				}.ToString(),
 				Color: msg.DefaultEmbedColor,
 			},
