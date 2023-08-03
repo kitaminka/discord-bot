@@ -6,6 +6,7 @@ import (
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
 	"log"
+	"regexp"
 )
 
 func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -48,11 +49,6 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 				Title: fmt.Sprintf("%v Новый репорт", msg.ReportEmoji.MessageFormat()),
 				Description: msg.StructuredDescription{
 					Fields: []*msg.StructuredDescriptionField{
-						//{
-						//	Emoji: msg.UsernameEmoji,
-						//	Name:  "Отправитель репорта",
-						//	Value: reportSenderMention,
-						//},
 						{
 							Emoji: msg.TextChannelEmoji,
 							Name:  "Сообщение",
@@ -118,7 +114,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
-	err = db.IncrementUserReportsSent(interactionCreate.Member.User.ID)
+	err = db.IncrementUserReportsSentCount(interactionCreate.Member.User.ID)
 	if err != nil {
 		log.Printf("Error incrementing user reports sent: %v", err)
 		return
@@ -126,6 +122,11 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 }
 
 func resolveReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав для этого.")
+		return
+	}
+
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -190,6 +191,11 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
+	err = db.ChangeUserReportsResolvedCount(reportResolverMember.User.ID, 1)
+	if err != nil {
+		log.Printf("Error changing user reports resolved count: %v", err)
+	}
+
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
@@ -206,6 +212,11 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 }
 
 func returnReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав для этого.")
+		return
+	}
+
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -232,7 +243,23 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 
 	resolvedReportMessageEmbed := interactionCreate.Message.Embeds[0]
 
-	resolvedReportMessage, err := session.ChannelMessageSendComplex(guild.ReportChannelID, &discordgo.MessageSend{
+	re := regexp.MustCompile(`\d+`)
+	reportResolverID := re.FindString(resolvedReportMessageEmbed.Author.IconURL)
+	reportResolverMember, err := session.GuildMember(guild.ID, reportResolverID)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
+		log.Printf("Error getting report resolver member: %v", err)
+		return
+	}
+
+	if reportResolverMember.Permissions&discordgo.PermissionModerateMembers != 0 {
+		err = db.ChangeUserReportsResolvedCount(reportResolverMember.User.ID, -1)
+		if err != nil {
+			log.Printf("Error changing user reports resolved count: %v", err)
+		}
+	}
+
+	returnedReportMessage, err := session.ChannelMessageSendComplex(guild.ReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       "Репорт",
@@ -256,7 +283,7 @@ func returnReportHandler(session *discordgo.Session, interactionCreate *discordg
 	}
 	err = session.ChannelMessageDelete(interactionCreate.Message.ChannelID, interactionCreate.Message.ID)
 	if err != nil {
-		err = session.ChannelMessageDelete(resolvedReportMessage.ChannelID, resolvedReportMessage.ID)
+		err = session.ChannelMessageDelete(returnedReportMessage.ChannelID, returnedReportMessage.ID)
 		if err != nil {
 			log.Printf("Error deleting report: %v", err)
 		}

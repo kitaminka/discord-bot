@@ -21,11 +21,11 @@ var (
 )
 
 type User struct {
-	ID               string    `bson:"id,omitempty"`
-	Reputation       int       `bson:"reputation,omitempty"`
-	ReputationDelay  time.Time `bson:"reputationDelayEnd,omitempty"`
-	ReportsSentCount int       `bson:"reportsSentCount,omitempty"`
-	Moderator        bool      `bson:"moderator,omitempty"`
+	ID                   string    `bson:"id,omitempty"`
+	Reputation           int       `bson:"reputation,omitempty"`
+	ReputationDelay      time.Time `bson:"reputationDelayEnd,omitempty"`
+	ReportsSentCount     int       `bson:"reportsSentCount,omitempty"`
+	ReportsResolvedCount int       `bson:"reportsResolvedCount,omitempty"`
 }
 
 func GetUser(userID string) (User, error) {
@@ -37,7 +37,6 @@ func GetUser(userID string) (User, error) {
 			ReputationDelay:  time.Time{},
 			Reputation:       DefaultReputation,
 			ReportsSentCount: 0,
-			Moderator:        false,
 		}, nil
 	}
 	return user, err
@@ -79,7 +78,12 @@ func GetUserReputationTop() ([]User, error) {
 	return users, err
 }
 
-func IncrementUserReportsSent(userID string) error {
+func IncrementUserReportsSentCount(userID string) error {
 	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$inc", bson.D{{"reportsSentCount", 1}}}}, options.Update().SetUpsert(true))
+	return err
+}
+
+func ChangeUserReportsResolvedCount(userID string, change int) error {
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$inc", bson.D{{"reportsResolvedCount", change}}}}, options.Update().SetUpsert(true))
 	return err
 }
