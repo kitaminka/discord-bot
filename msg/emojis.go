@@ -67,4 +67,8 @@ var (
 		ID:   "1129093452664148029",
 		Name: "dislike",
 	}
+	CheckMarkEmoji = discordgo.Emoji{
+		ID:   "1137725987002535966",
+		Name: "check_mark",
+	}
 )

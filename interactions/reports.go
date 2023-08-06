@@ -6,7 +6,6 @@ import (
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
 	"log"
-	"regexp"
 )
 
 func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -47,8 +46,13 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: fmt.Sprintf("%v Новый репорт", msg.ReportEmoji.MessageFormat()),
-				Description: msg.StructuredDescription{
-					Fields: []*msg.StructuredDescriptionField{
+				Description: msg.StructuredText{
+					Fields: []*msg.StructuredTextField{
+						{
+							Emoji: msg.UsernameEmoji,
+							Name:  "Отправитель репорта",
+							Value: msg.UserMention(interactionCreate.Member.User),
+						},
 						{
 							Emoji: msg.TextChannelEmoji,
 							Name:  "Сообщение",
@@ -66,10 +70,6 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 						},
 					},
 				}.ToString(),
-				Footer: &discordgo.MessageEmbedFooter{
-					Text:    fmt.Sprintf("Отправлен: %v", interactionCreate.Member.User.Username),
-					IconURL: interactionCreate.Member.User.AvatarURL(""),
-				},
 				Color: msg.DefaultEmbedColor,
 			},
 		},
@@ -91,9 +91,9 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: fmt.Sprintf("%v Репорт отправлен", msg.ReportEmoji.MessageFormat()),
-				Description: msg.StructuredDescription{
+				Description: msg.StructuredText{
 					Text: "Ваш репорт был успешно отправлен.",
-					Fields: []*msg.StructuredDescriptionField{
+					Fields: []*msg.StructuredTextField{
 						{
 							Emoji: msg.TextChannelEmoji,
 							Name:  "Сообщение",
@@ -157,20 +157,12 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 	resolvedReportMessage, err := session.ChannelMessageSendComplex(guild.ResoledReportChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Author: &discordgo.MessageEmbedAuthor{
-					Name:    fmt.Sprintf("Рассмотрен: %v", reportResolverMember.User.Username),
-					IconURL: reportResolverMember.AvatarURL(""),
-				},
 				Title:       fmt.Sprintf("%v Рассмотреный репорт", msg.ShieldCheckMarkEmoji.MessageFormat()),
 				Description: reportMessageEmbed.Description,
-				Footer:      reportMessageEmbed.Footer,
 				Color:       msg.DefaultEmbedColor,
-			},
-		},
-		Components: []discordgo.MessageComponent{
-			discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{
-					ReturnReportButton,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text:    fmt.Sprintf("Рассмотрен: %v", reportResolverMember.User.Username),
+					IconURL: reportResolverMember.AvatarURL(""),
 				},
 			},
 		},
@@ -201,102 +193,6 @@ func resolveReportHandler(session *discordgo.Session, interactionCreate *discord
 			{
 				Title:       "Репорт рассмотрен",
 				Description: "Репорт был успешно перемещен в рассмотренные.",
-				Color:       msg.DefaultEmbedColor,
-			},
-		},
-	})
-	if err != nil {
-		log.Printf("Error editing interaction response: %v", err)
-		return
-	}
-}
-
-func returnReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав для этого.")
-		return
-	}
-
-	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		log.Printf("Error responding to interaction: %v", err)
-		return
-	}
-
-	guild, err := db.GetGuild()
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
-		log.Printf("Error getting server: %v", err)
-		return
-	}
-
-	if len(interactionCreate.Message.Embeds) != 1 {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
-		log.Print("Resolved report message is invalid")
-		return
-	}
-
-	resolvedReportMessageEmbed := interactionCreate.Message.Embeds[0]
-
-	re := regexp.MustCompile(`\d+`)
-	reportResolverID := re.FindString(resolvedReportMessageEmbed.Author.IconURL)
-	reportResolverMember, err := session.GuildMember(guild.ID, reportResolverID)
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
-		log.Printf("Error getting report resolver member: %v", err)
-		return
-	}
-
-	if reportResolverMember.Permissions&discordgo.PermissionModerateMembers != 0 {
-		err = db.ChangeUserReportsResolvedCount(reportResolverMember.User.ID, -1)
-		if err != nil {
-			log.Printf("Error changing user reports resolved count: %v", err)
-		}
-	}
-
-	returnedReportMessage, err := session.ChannelMessageSendComplex(guild.ReportChannelID, &discordgo.MessageSend{
-		Embeds: []*discordgo.MessageEmbed{
-			{
-				Title:       "Репорт",
-				Description: resolvedReportMessageEmbed.Description,
-				Color:       msg.DefaultEmbedColor,
-				Footer:      resolvedReportMessageEmbed.Footer,
-			},
-		},
-		Components: []discordgo.MessageComponent{
-			discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{
-					ResolveReportButton,
-				},
-			},
-		},
-	})
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
-		log.Printf("Error sending report: %v", err)
-		return
-	}
-	err = session.ChannelMessageDelete(interactionCreate.Message.ChannelID, interactionCreate.Message.ID)
-	if err != nil {
-		err = session.ChannelMessageDelete(returnedReportMessage.ChannelID, returnedReportMessage.ID)
-		if err != nil {
-			log.Printf("Error deleting report: %v", err)
-		}
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при возвращении репорта. Свяжитесь с администрацией.")
-		log.Printf("Error deleting resolved report: %v", err)
-		return
-	}
-
-	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-		Embeds: &[]*discordgo.MessageEmbed{
-			{
-				Title:       "Репорт возвращен",
-				Description: "Репорт был успешно возвращен в нерассмотренные.",
 				Color:       msg.DefaultEmbedColor,
 			},
 		},

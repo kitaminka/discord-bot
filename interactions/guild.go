@@ -44,7 +44,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 		return
 	}
 
-	structuredDescriptionFields := []*msg.StructuredDescriptionField{
+	structuredDescriptionFields := []*msg.StructuredTextField{
 		{
 			Emoji: msg.ShieldCheckMarkEmoji,
 			Name:  "ID сервера",
@@ -56,7 +56,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 	if err != nil {
 		log.Printf("Error getting report channel: %v", err)
 	} else {
-		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredDescriptionField{
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredTextField{
 			Emoji: msg.ReportEmoji,
 			Name:  "Канал для репортов",
 			Value: reportChannel.Mention(),
@@ -66,7 +66,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 	if err != nil {
 		log.Printf("Error getting resolved report channel: %v", err)
 	} else {
-		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredDescriptionField{
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredTextField{
 			Emoji: msg.ShieldCheckMarkEmoji,
 			Name:  "Канал для рассмотренных репортов",
 			Value: resolvedReportChannel.Mention(),
@@ -76,7 +76,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 	if err != nil {
 		log.Printf("Error getting reputation log channel: %v", err)
 	} else {
-		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredDescriptionField{
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredTextField{
 			Emoji: msg.ReputationEmoji,
 			Name:  "Канал для логирования репутации",
 			Value: reputationLogChannel.Mention(),
@@ -87,7 +87,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: "Настройки сервера",
-				Description: msg.StructuredDescription{
+				Description: msg.StructuredText{
 					Fields: structuredDescriptionFields,
 				}.ToString(),
 				Color: msg.DefaultEmbedColor,
@@ -116,9 +116,9 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		return
 	}
 
-	structuredDescription := msg.StructuredDescription{
+	structuredDescription := msg.StructuredText{
 		Text: "Настройки сервера были успешно обновлены. Этот сервер установлен как основной.",
-		Fields: []*msg.StructuredDescriptionField{
+		Fields: []*msg.StructuredTextField{
 			{
 				Emoji: msg.IdEmoji,
 				Name:  "ID сервера",
@@ -135,7 +135,7 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		case "канал_для_репортов":
 			channel := option.ChannelValue(session)
 			server.ReportChannelID = channel.ID
-			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredDescriptionField{
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredTextField{
 				Emoji: msg.ReportEmoji,
 				Name:  "Канал для репортов",
 				Value: channel.Mention(),
@@ -143,7 +143,7 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		case "канал_для_рассмотренных_репортов":
 			channel := option.ChannelValue(session)
 			server.ResoledReportChannelID = channel.ID
-			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredDescriptionField{
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredTextField{
 				Emoji: msg.ShieldCheckMarkEmoji,
 				Name:  "Канал для рассмотренных репортов",
 				Value: channel.Mention(),
@@ -151,7 +151,7 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 		case "канал_для_логирования_репутации":
 			channel := option.ChannelValue(session)
 			server.ReputationLogChannelID = channel.ID
-			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredDescriptionField{
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredTextField{
 				Emoji: msg.ReputationEmoji,
 				Name:  "Канал для логирования репутации",
 				Value: channel.Mention(),
@@ -226,9 +226,9 @@ func guildRulesAddChatCommandHandler(session *discordgo.Session, interactionCrea
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: "Правило добавлено",
-				Description: msg.StructuredDescription{
+				Description: msg.StructuredText{
 					Text: "Правило было успешно добавлено.",
-					Fields: []*msg.StructuredDescriptionField{
+					Fields: []*msg.StructuredTextField{
 						{
 							Name:  "Название",
 							Value: name,
@@ -272,8 +272,8 @@ func guildRulesViewChatCommandHandler(session *discordgo.Session, interactionCre
 	for _, rule := range guild.Rules {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name: rule.Name,
-			Value: msg.StructuredDescription{
-				Fields: []*msg.StructuredDescriptionField{
+			Value: msg.StructuredText{
+				Fields: []*msg.StructuredTextField{
 					{
 						Name:  "ID",
 						Value: rule.ID.Hex(),

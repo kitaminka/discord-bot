@@ -5,17 +5,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type StructuredDescription struct {
+type StructuredText struct {
 	Text   string
-	Fields []*StructuredDescriptionField
+	Fields []*StructuredTextField
 }
-type StructuredDescriptionField struct {
+type StructuredTextField struct {
 	Emoji discordgo.Emoji
 	Name  string
 	Value string
 }
 
-func (structuredDescription StructuredDescription) ToString() string {
+func (structuredDescription StructuredText) ToString() string {
 	result := structuredDescription.Text
 
 	if len(structuredDescription.Fields) > 0 {

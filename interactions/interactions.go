@@ -65,8 +65,8 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji.MessageFormat(), member.User.Username),
-				Description: msg.StructuredDescription{
-					Fields: []*msg.StructuredDescriptionField{
+				Description: msg.StructuredText{
+					Fields: []*msg.StructuredTextField{
 						{
 							Emoji: msg.UsernameEmoji,
 							Name:  "Пользователь",

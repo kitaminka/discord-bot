@@ -53,9 +53,9 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: "Предупреждение выдано",
-				Description: msg.StructuredDescription{
+				Description: msg.StructuredText{
 					Text: "Предупреждение успешно выдано.",
-					Fields: []*msg.StructuredDescriptionField{
+					Fields: []*msg.StructuredTextField{
 						{
 							Name:  "Время выдачи",
 							Value: fmt.Sprintf("<t:%v>", warnTime.Unix()),
@@ -268,12 +268,12 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Предупреждение снято",
-				Description: msg.StructuredDescription{
+				Description: msg.StructuredText{
 					Text: "Предупреждение снято.",
-					Fields: []*msg.StructuredDescriptionField{
+					Fields: []*msg.StructuredTextField{
 						{
 							Name:  "ID",
-							Value: warning.ID.Hex(),
+							Value: fmt.Sprintf("`%v`", warning.ID.Hex()),
 						},
 						{
 							Name:  "Время выдачи",

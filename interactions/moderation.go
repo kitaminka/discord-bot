@@ -52,9 +52,9 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 			Embeds: []*discordgo.MessageEmbed{
 				{
 					Title: "Мут выдан",
-					Description: msg.StructuredDescription{
+					Description: msg.StructuredText{
 						Text: "Мут успешно выдан.",
-						Fields: []*msg.StructuredDescriptionField{
+						Fields: []*msg.StructuredTextField{
 							{
 								Name:  "Пользователь",
 								Value: msg.UserMention(discordUser),
