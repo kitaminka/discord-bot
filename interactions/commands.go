@@ -22,86 +22,8 @@ var (
 			Handler: reportMessageCommandHandler,
 		},
 		"guild": {
-			ApplicationCommand: &discordgo.ApplicationCommand{
-				Type:        discordgo.ChatApplicationCommand,
-				Name:        "guild",
-				Description: "Управление настройками сервера",
-				Options: []*discordgo.ApplicationCommandOption{
-					{
-						Type:        discordgo.ApplicationCommandOptionSubCommand,
-						Name:        "update",
-						Description: "Обновить настройки сервера",
-						Options: []*discordgo.ApplicationCommandOption{
-							{
-								Type:        discordgo.ApplicationCommandOptionChannel,
-								Name:        "канал_для_репортов",
-								Description: "Канал, где находятся нерассмотренные репорты",
-								ChannelTypes: []discordgo.ChannelType{
-									discordgo.ChannelTypeGuildText,
-								},
-								Required: false,
-							},
-							{
-								Type:        discordgo.ApplicationCommandOptionChannel,
-								Name:        "канал_для_рассмотренных_репортов",
-								Description: "Канал, где находятся рассмотренные репорты",
-								ChannelTypes: []discordgo.ChannelType{
-									discordgo.ChannelTypeGuildText,
-								},
-								Required: false,
-							},
-							{
-								Type:        discordgo.ApplicationCommandOptionChannel,
-								Name:        "канал_для_логирования_репутации",
-								Description: "Канал, где логируется изменение репутации пользователей",
-								ChannelTypes: []discordgo.ChannelType{
-									discordgo.ChannelTypeGuildText,
-								},
-								Required: false,
-							},
-						},
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionSubCommand,
-						Name:        "view",
-						Description: "Просмотреть настройки сервера",
-					},
-					{
-						Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
-						Name:        "rules",
-						Description: "Управление правилами сервера",
-						Options: []*discordgo.ApplicationCommandOption{
-							{
-								Type:        discordgo.ApplicationCommandOptionSubCommand,
-								Name:        "add",
-								Description: "Добавить правило",
-								Options: []*discordgo.ApplicationCommandOption{
-									{
-										Type:        discordgo.ApplicationCommandOptionString,
-										Name:        "название",
-										Description: "Короткое название правила",
-										Required:    true,
-									},
-									{
-										Type:        discordgo.ApplicationCommandOptionString,
-										Name:        "описание",
-										Description: "Описание правила",
-										Required:    true,
-									},
-								},
-							},
-							{
-								Type:        discordgo.ApplicationCommandOptionSubCommand,
-								Name:        "view",
-								Description: "Просмотреть правила",
-							},
-						},
-					},
-				},
-				DMPermission:             new(bool),
-				DefaultMemberPermissions: &AdministratorPermission,
-			},
-			Handler: guildChatCommandHandler,
+			ApplicationCommand: GuildApplicationCommand,
+			Handler:            guildChatCommandHandler,
 		},
 		"resetdelay": {
 			ApplicationCommand: &discordgo.ApplicationCommand{
@@ -280,6 +202,15 @@ var (
 				DefaultMemberPermissions: &ModeratorPermission,
 			},
 			Handler: remWarnChatCommandHandler,
+		},
+		"Выдать предупреждение": {
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Type:                     discordgo.MessageApplicationCommand,
+				Name:                     "Выдать предупреждение",
+				DMPermission:             new(bool),
+				DefaultMemberPermissions: &ModeratorPermission,
+			},
+			Handler: warnMessageCommandHandler,
 		},
 		"mute": {
 			ApplicationCommand: &discordgo.ApplicationCommand{

@@ -8,6 +8,86 @@ import (
 	"log"
 )
 
+var GuildApplicationCommand = &discordgo.ApplicationCommand{
+	Type:        discordgo.ChatApplicationCommand,
+	Name:        "guild",
+	Description: "Управление настройками сервера",
+	Options: []*discordgo.ApplicationCommandOption{
+		{
+			Type:        discordgo.ApplicationCommandOptionSubCommand,
+			Name:        "update",
+			Description: "Обновить настройки сервера",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionChannel,
+					Name:        "канал_для_репортов",
+					Description: "Канал, где находятся нерассмотренные репорты",
+					ChannelTypes: []discordgo.ChannelType{
+						discordgo.ChannelTypeGuildText,
+					},
+					Required: false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionChannel,
+					Name:        "канал_для_рассмотренных_репортов",
+					Description: "Канал, где находятся рассмотренные репорты",
+					ChannelTypes: []discordgo.ChannelType{
+						discordgo.ChannelTypeGuildText,
+					},
+					Required: false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionChannel,
+					Name:        "канал_для_логирования_репутации",
+					Description: "Канал, где логируется изменение репутации пользователей",
+					ChannelTypes: []discordgo.ChannelType{
+						discordgo.ChannelTypeGuildText,
+					},
+					Required: false,
+				},
+			},
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionSubCommand,
+			Name:        "view",
+			Description: "Просмотреть настройки сервера",
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
+			Name:        "reason",
+			Description: "Управление причинами наказаний",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionSubCommand,
+					Name:        "add",
+					Description: "Добавить причину наказания",
+					Options: []*discordgo.ApplicationCommandOption{
+						{
+							Type:        discordgo.ApplicationCommandOptionString,
+							Name:        "название",
+							Description: "Короткое название причины",
+							Required:    true,
+						},
+						{
+							Type:        discordgo.ApplicationCommandOptionString,
+							Name:        "описание",
+							Description: "Подробное описание причины предупреждения",
+							Required:    true,
+						},
+					},
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionSubCommand,
+					Name:        "view",
+					Description: "Просмотреть причины наказаний",
+				},
+			},
+		},
+	},
+	DMPermission:             new(bool),
+	DefaultMemberPermissions: &AdministratorPermission,
+}
+
 func guildChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
 		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
@@ -212,7 +292,7 @@ func guildRulesAddChatCommandHandler(session *discordgo.Session, interactionCrea
 		}
 	}
 
-	err = db.AddGuildRule(db.Rule{
+	err = db.AddGuildRule(db.Reason{
 		Name:        name,
 		Description: description,
 	})
@@ -269,7 +349,7 @@ func guildRulesViewChatCommandHandler(session *discordgo.Session, interactionCre
 
 	var fields []*discordgo.MessageEmbedField
 
-	for _, rule := range guild.Rules {
+	for _, rule := range guild.Reasons {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name: rule.Name,
 			Value: msg.StructuredText{

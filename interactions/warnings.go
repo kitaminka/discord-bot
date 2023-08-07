@@ -75,6 +75,30 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		},
 	})
 }
+func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	message := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
+
+	perms, err := session.UserChannelPermissions(message.Author.ID, interactionCreate.ChannelID)
+	if err != nil {
+		log.Printf("Error getting member: %v", err)
+	}
+	fmt.Println(perms)
+
+	if interactionCreate.Member.User.ID == message.Author.ID {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на своё сообщение.")
+		return
+	}
+
+	if message.Author.Bot {
+		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на сообщение бота.")
+		return
+	}
+}
 
 func createRemWarnSelectMenu(session *discordgo.Session, warnings []db.Warning) (discordgo.SelectMenu, error) {
 	var selectMenuOptions []discordgo.SelectMenuOption

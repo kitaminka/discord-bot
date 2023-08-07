@@ -19,7 +19,7 @@ func autocompleteWarnHandler(session *discordgo.Session, interactionCreate *disc
 
 	var ruleChoices []*discordgo.ApplicationCommandOptionChoice
 
-	for _, rule := range guild.Rules {
+	for _, rule := range guild.Reasons {
 		ruleChoices = append(ruleChoices, &discordgo.ApplicationCommandOptionChoice{
 			Name:  rule.Name,
 			Value: rule.ID.Hex(),
