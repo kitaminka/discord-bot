@@ -3,8 +3,11 @@ package interactions
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -15,8 +18,11 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	var discordUser *discordgo.User
-	var durationString string
+	var (
+		discordUser    *discordgo.User
+		durationString string
+		reasonString   string
+	)
 
 	for _, option := range interactionCreate.ApplicationCommandData().Options {
 		switch option.Name {
@@ -24,6 +30,8 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 			discordUser = option.UserValue(session)
 		case "длительность":
 			durationString = option.StringValue()
+		case "причина":
+			reasonString = option.StringValue()
 		}
 	}
 
@@ -40,7 +48,18 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 
 	until := time.Now().Add(duration)
 
-	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &until)
+	reasonID, err := primitive.ObjectIDFromHex(reasonString)
+	if err != nil {
+		log.Printf("Error getting object ID: %v", err)
+		return
+	}
+	reason, err := db.GetReason(reasonID)
+	if err != nil {
+		log.Printf("Error getting reason: %v", err)
+		return
+	}
+
+	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &until, discordgo.WithAuditLogReason(url.QueryEscape(reason.Name)))
 	if err != nil {
 		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		return
@@ -56,12 +75,20 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 						Text: "Мут успешно выдан.",
 						Fields: []*msg.StructuredTextField{
 							{
+								Name:  "Мут истекает",
+								Value: fmt.Sprintf("<t:%v:R>", until.Unix()),
+							},
+							{
+								Name:  "Причина",
+								Value: reason.Name,
+							},
+							{
 								Name:  "Пользователь",
 								Value: msg.UserMention(discordUser),
 							},
 							{
-								Name:  "Мут истекает",
-								Value: fmt.Sprintf("<t:%v:R>", until.Unix()),
+								Name:  "Модератор",
+								Value: msg.UserMention(interactionCreate.Member.User),
 							},
 						},
 					}.ToString(),

@@ -46,13 +46,13 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
+	warnTime := time.Now()
+
 	reasonID, err := primitive.ObjectIDFromHex(reasonString)
 	if err != nil {
 		log.Printf("Error getting object ID: %v", err)
 		return
 	}
-
-	warnTime := time.Now()
 	reason, err := db.GetReason(reasonID)
 	if err != nil {
 		log.Printf("Error getting reason: %v", err)
