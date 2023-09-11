@@ -110,6 +110,6 @@ func topChatCommandHandler(session *discordgo.Session, interactionCreate *discor
 	case "reputation":
 		topReputationChatCommandHandler(session, interactionCreate)
 	default:
-		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
 	}
 }

@@ -11,7 +11,7 @@ import (
 
 func muteChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
@@ -30,11 +30,11 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	durationString = strings.ReplaceAll(durationString, " ", "")
 	duration, err := time.ParseDuration(durationString)
 	if err != nil {
-		interactionRespondError(session, interactionCreate.Interaction, "Неверный формат длительности.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Неверный формат длительности.")
 		return
 	}
 	if duration < 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Длительность мута не может быть отрицательной.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Длительность мута не может быть отрицательной.")
 		return
 	}
 
@@ -42,7 +42,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 
 	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &until)
 	if err != nil {
-		interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		return
 	}
 

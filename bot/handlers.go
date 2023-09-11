@@ -11,7 +11,12 @@ var Handlers = []interface{}{
 	func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 		switch interactionCreate.Type {
 		case discordgo.InteractionApplicationCommand:
-			interactions.CommandHandlers[interactionCreate.ApplicationCommandData().Name](session, interactionCreate)
+			handler, exists := interactions.CommandHandlers[interactionCreate.ApplicationCommandData().Name]
+			if !exists {
+				interactions.InteractionRespondError(session, interactionCreate.Interaction, "Команда не найдена. Свяжитесь с администрацией.")
+				return
+			}
+			handler(session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
 			interactions.ComponentHandlers[interactionCreate.MessageComponentData().CustomID](session, interactionCreate)
 		case discordgo.InteractionApplicationCommandAutocomplete:

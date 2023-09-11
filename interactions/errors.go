@@ -7,14 +7,7 @@ import (
 	"log"
 )
 
-func createErrorEmbed(errorMessage string) *discordgo.MessageEmbed {
-	return &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("%v Ошибка", msg.ErrorEmoji.MessageFormat()),
-		Description: errorMessage,
-		Color:       msg.ErrorEmbedColor,
-	}
-}
-func interactionRespondError(session *discordgo.Session, interaction *discordgo.Interaction, errorMessage string) {
+func InteractionRespondError(session *discordgo.Session, interaction *discordgo.Interaction, errorMessage string) {
 	err := session.InteractionRespond(interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -26,6 +19,14 @@ func interactionRespondError(session *discordgo.Session, interaction *discordgo.
 	})
 	if err != nil {
 		log.Printf("Error responding to interaction: %v", err)
+	}
+}
+
+func createErrorEmbed(errorMessage string) *discordgo.MessageEmbed {
+	return &discordgo.MessageEmbed{
+		Title:       fmt.Sprintf("%v Ошибка", msg.ErrorEmoji.MessageFormat()),
+		Description: errorMessage,
+		Color:       msg.ErrorEmbedColor,
 	}
 }
 func interactionResponseErrorEdit(session *discordgo.Session, interaction *discordgo.Interaction, errorMessage string) {

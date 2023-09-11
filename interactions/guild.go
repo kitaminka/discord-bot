@@ -90,7 +90,7 @@ var GuildApplicationCommand = &discordgo.ApplicationCommand{
 
 func guildChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
@@ -102,7 +102,7 @@ func guildChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 	case "reasons":
 		guildReasonsChatCommandHandler(session, interactionCreate)
 	default:
-		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
 	}
 }
 func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -181,7 +181,7 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 }
 func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if len(interactionCreate.ApplicationCommandData().Options[0].Options) == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не указали ни одной опции для обновления.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не указали ни одной опции для обновления.")
 		return
 	}
 

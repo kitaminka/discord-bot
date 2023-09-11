@@ -15,12 +15,12 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	reportedMessageSenderMention := msg.UserMention(reportedMessage.Author)
 
 	if interactionCreate.Member.User.ID == reportedMessage.Author.ID {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на своё сообщение.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на своё сообщение.")
 		return
 	}
 
 	if reportedMessage.Author.Bot {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на сообщение бота.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на сообщение бота.")
 		return
 	}
 
@@ -123,7 +123,7 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 
 func resolveReportHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав для этого.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав для этого.")
 		return
 	}
 

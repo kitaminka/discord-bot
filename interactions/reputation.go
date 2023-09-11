@@ -43,7 +43,7 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		var err error
 		discordUser, err = session.User(interactionCreate.ApplicationCommandData().TargetID)
 		if err != nil {
-			interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+			InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
 			log.Printf("Error getting user: %v", err)
 			return
 		}
@@ -52,18 +52,18 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 	}
 
 	if interactionCreate.Member.User.ID == discordUser.ID {
-		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v самому себе.", action))
+		InteractionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v самому себе.", action))
 		return
 	}
 
 	if discordUser.Bot {
-		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v боту.", action))
+		InteractionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v боту.", action))
 		return
 	}
 
 	_, err := session.GuildMember(interactionCreate.GuildID, discordUser.ID)
 	if err != nil {
-		interactionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v пользователю, который не находится на сервере.", action))
+		InteractionRespondError(session, interactionCreate.Interaction, fmt.Sprintf("Вы не можете поставить %v пользователю, который не находится на сервере.", action))
 		return
 	}
 
@@ -194,7 +194,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 
 func setReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
@@ -211,15 +211,15 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 	}
 
 	if discordUser == nil {
-		interactionRespondError(session, interactionCreate.Interaction, "Не указан пользователь.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Не указан пользователь.")
 		return
 	} else if reputation == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Не указана репутация.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Не указана репутация.")
 		return
 	}
 
 	if discordUser.Bot {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете изменить репутацию бота.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете изменить репутацию бота.")
 		return
 	}
 
@@ -266,13 +266,13 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 }
 func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
 	user := interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
 	if user.Bot {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете сбросить задержку боту.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете сбросить задержку боту.")
 		return
 	}
 

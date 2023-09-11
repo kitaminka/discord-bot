@@ -12,7 +12,7 @@ import (
 
 func warnChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
@@ -31,7 +31,7 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	}
 
 	if discordUser.Bot {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
 		return
 	}
 
@@ -98,7 +98,7 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 }
 func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
@@ -111,12 +111,12 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 	fmt.Println(perms)
 
 	if interactionCreate.Member.User.ID == message.Author.ID {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на своё сообщение.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на своё сообщение.")
 		return
 	}
 
 	if message.Author.Bot {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на сообщение бота.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на сообщение бота.")
 		return
 	}
 }
@@ -151,7 +151,7 @@ func createRemWarnSelectMenu(session *discordgo.Session, warnings []db.Warning) 
 
 func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
@@ -165,7 +165,7 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 	}
 
 	if discordUser.Bot {
-		interactionRespondError(session, interactionCreate.Interaction, "Вы не можете снять предупреждение с бота.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете снять предупреждение с бота.")
 		return
 	}
 
@@ -231,7 +231,7 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 
 func removeWarningHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
-		interactionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
 	}
 
@@ -239,7 +239,7 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 
 	warnID, err := primitive.ObjectIDFromHex(componentValue)
 	if err != nil {
-		interactionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждения. Свяжитесь с администрацией.")
 		log.Printf("Error creating object ID: %v", err)
 		return
 	}
