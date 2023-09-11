@@ -54,7 +54,7 @@ var GuildApplicationCommand = &discordgo.ApplicationCommand{
 		},
 		{
 			Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
-			Name:        "reason",
+			Name:        "reasons",
 			Description: "Управление причинами наказаний",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
@@ -99,7 +99,7 @@ func guildChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 		guildViewChatCommandHandler(session, interactionCreate)
 	case "update":
 		guildUpdateChatCommandHandler(session, interactionCreate)
-	case "rules":
+	case "reasons":
 		guildRulesChatCommandHandler(session, interactionCreate)
 	default:
 		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
@@ -292,7 +292,7 @@ func guildRulesAddChatCommandHandler(session *discordgo.Session, interactionCrea
 		}
 	}
 
-	err = db.AddGuildRule(db.Reason{
+	err = db.CreateReason(db.Reason{
 		Name:        name,
 		Description: description,
 	})
@@ -305,9 +305,9 @@ func guildRulesAddChatCommandHandler(session *discordgo.Session, interactionCrea
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
-				Title: "Правило добавлено",
+				Title: "Причина добавлена",
 				Description: msg.StructuredText{
-					Text: "Правило было успешно добавлено.",
+					Text: "Причина была успешно добавлена.",
 					Fields: []*msg.StructuredTextField{
 						{
 							Name:  "Название",
@@ -340,27 +340,30 @@ func guildRulesViewChatCommandHandler(session *discordgo.Session, interactionCre
 		return
 	}
 
-	guild, err := db.GetGuild()
+	var (
+		reasons []db.Reason
+		fields  []*discordgo.MessageEmbedField
+	)
+
+	reasons, err = db.GetReasons()
 	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при просмотре правил.")
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при просмотре причин.")
 		log.Printf("Error getting guild: %v", err)
 		return
 	}
 
-	var fields []*discordgo.MessageEmbedField
-
-	for _, rule := range guild.Reasons {
+	for _, reason := range reasons {
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name: rule.Name,
+			Name: reason.Name,
 			Value: msg.StructuredText{
 				Fields: []*msg.StructuredTextField{
 					{
 						Name:  "ID",
-						Value: rule.ID.Hex(),
+						Value: reason.ID.Hex(),
 					},
 					{
 						Name:  "Описание",
-						Value: fmt.Sprintf("```%v```", rule.Description),
+						Value: fmt.Sprintf("```%v```", reason.Description),
 					},
 				},
 			}.ToString(),
@@ -370,7 +373,7 @@ func guildRulesViewChatCommandHandler(session *discordgo.Session, interactionCre
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
-				Title:  "Правила сервера",
+				Title:  "Причины",
 				Fields: fields,
 				Color:  msg.DefaultEmbedColor,
 			},

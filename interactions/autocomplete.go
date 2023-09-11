@@ -11,25 +11,25 @@ var AutocompleteHandlers = map[string]func(session *discordgo.Session, interacti
 }
 
 func autocompleteWarnHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	guild, err := db.GetGuild()
+	var reasons []db.Reason
+	var reasonChoices []*discordgo.ApplicationCommandOptionChoice
+
+	reasons, err := db.GetReasons()
 	if err != nil {
 		log.Printf("Error getting guild: %v", err)
 		return
 	}
 
-	var ruleChoices []*discordgo.ApplicationCommandOptionChoice
-
-	for _, rule := range guild.Reasons {
-		ruleChoices = append(ruleChoices, &discordgo.ApplicationCommandOptionChoice{
-			Name:  rule.Name,
-			Value: rule.ID.Hex(),
-		})
+	for _, reason := range reasons {
+		reasonChoices = append(reasonChoices, &discordgo.ApplicationCommandOptionChoice{
+			Name:  reason.Name,
+			Value: reason.ID.Hex()})
 	}
 
 	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionApplicationCommandAutocompleteResult,
 		Data: &discordgo.InteractionResponseData{
-			Choices: ruleChoices,
+			Choices: reasonChoices,
 		},
 	})
 	if err != nil {

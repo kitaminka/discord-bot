@@ -42,7 +42,7 @@ func GetUser(userID string) (User, error) {
 	return user, err
 }
 
-func RemoveUser(userID string) error {
+func DeleteUser(userID string) error {
 	_, err := MongoDatabase.Collection(UserCollectionName).DeleteOne(context.Background(), bson.D{{"id", userID}})
 	return err
 }
