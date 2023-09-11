@@ -30,7 +30,7 @@ func StartBot(token, mongoUri, mongoDatabaseName string) {
 
 	interactions.CreateApplicationCommands(session)
 
-	log.Println("Bot is now running. Press CTRL-C to exit.")
+	log.Print("Bot is now running. Press CTRL-C to exit.")
 
 	defer session.Close()
 

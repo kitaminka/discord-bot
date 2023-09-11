@@ -7,10 +7,11 @@ import (
 )
 
 var AutocompleteHandlers = map[string]func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate){
-	"warn": autocompleteWarnHandler,
+	"warn": autocompleteReasonHandler,
+	"mute": autocompleteReasonHandler,
 }
 
-func autocompleteWarnHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func autocompleteReasonHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	var reasons []db.Reason
 	var reasonChoices []*discordgo.ApplicationCommandOptionChoice
 

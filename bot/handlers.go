@@ -11,7 +11,7 @@ var Handlers = []interface{}{
 	func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 		switch interactionCreate.Type {
 		case discordgo.InteractionApplicationCommand:
-			interactions.Commands[interactionCreate.ApplicationCommandData().Name].Handler(session, interactionCreate)
+			interactions.CommandHandlers[interactionCreate.ApplicationCommandData().Name](session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
 			interactions.ComponentHandlers[interactionCreate.MessageComponentData().CustomID](session, interactionCreate)
 		case discordgo.InteractionApplicationCommandAutocomplete:
