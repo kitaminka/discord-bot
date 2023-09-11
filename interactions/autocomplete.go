@@ -23,7 +23,8 @@ func autocompleteWarnHandler(session *discordgo.Session, interactionCreate *disc
 	for _, reason := range reasons {
 		reasonChoices = append(reasonChoices, &discordgo.ApplicationCommandOptionChoice{
 			Name:  reason.Name,
-			Value: reason.ID.Hex()})
+			Value: reason.ID.Hex(),
+		})
 	}
 
 	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{

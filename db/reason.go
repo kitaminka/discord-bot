@@ -34,9 +34,14 @@ func UpdateReason(reason Reason) error {
 	_, err := MongoDatabase.Collection(ReasonCollectionName).UpdateOne(context.Background(), bson.D{{"_id", reason.ID}}, bson.D{{"$set", reason}})
 	return err
 }
-func DeleteReason(reasonID primitive.ObjectID) error {
+func RemoveReason(reasonID primitive.ObjectID) error {
 	_, err := MongoDatabase.Collection(ReasonCollectionName).DeleteOne(context.Background(), bson.D{{"_id", reasonID}})
 	return err
+}
+func GetReason(reasonID primitive.ObjectID) (Reason, error) {
+	var reason Reason
+	err := MongoDatabase.Collection(ReasonCollectionName).FindOne(context.Background(), bson.D{{"_id", reasonID}}).Decode(&reason)
+	return reason, err
 }
 func GetReasons() ([]Reason, error) {
 	var reasons []Reason

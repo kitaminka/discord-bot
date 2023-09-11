@@ -15,11 +15,12 @@ const (
 type Warning struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"`
 	Time        time.Time          `bson:"time,omitempty"`
+	Reason      string             `bson:"reason,omitempty"`
 	UserID      string             `bson:"userId,omitempty"`
 	ModeratorID string             `bson:"moderatorId,omitempty"`
 }
 
-func AddUserWarning(warn Warning) error {
+func CreateWarning(warn Warning) error {
 	_, err := MongoDatabase.Collection(WarningCollectionName).InsertOne(context.Background(), warn)
 	return err
 }

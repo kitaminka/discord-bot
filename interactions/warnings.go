@@ -16,12 +16,17 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	var discordUser *discordgo.User
+	var (
+		discordUser  *discordgo.User
+		reasonString string
+	)
 
 	for _, option := range interactionCreate.ApplicationCommandData().Options {
 		switch option.Name {
 		case "пользователь":
 			discordUser = option.UserValue(session)
+		case "причина":
+			reasonString = option.StringValue()
 		}
 	}
 
@@ -41,10 +46,22 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	warnTime := time.Now()
+	reasonID, err := primitive.ObjectIDFromHex(reasonString)
+	if err != nil {
+		log.Printf("Error getting object ID: %v", err)
+		return
+	}
 
-	err = db.AddUserWarning(db.Warning{
+	warnTime := time.Now()
+	reason, err := db.GetReason(reasonID)
+	if err != nil {
+		log.Printf("Error getting reason: %v", err)
+		return
+	}
+
+	err = db.CreateWarning(db.Warning{
 		Time:        warnTime,
+		Reason:      reason.Name,
 		UserID:      discordUser.ID,
 		ModeratorID: interactionCreate.Member.User.ID,
 	})
@@ -59,6 +76,10 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 						{
 							Name:  "Время выдачи",
 							Value: fmt.Sprintf("<t:%v>", warnTime.Unix()),
+						},
+						{
+							Name:  "Причина",
+							Value: reason.Name,
 						},
 						{
 							Name:  "Пользователь",
@@ -85,7 +106,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 
 	perms, err := session.UserChannelPermissions(message.Author.ID, interactionCreate.ChannelID)
 	if err != nil {
-		log.Printf("Error getting member: %v", err)
+		log.Printf("Error getting user permissions: %v", err)
 	}
 	fmt.Println(perms)
 
@@ -112,7 +133,7 @@ func createRemWarnSelectMenu(session *discordgo.Session, warnings []db.Warning) 
 		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
 			Label:       fmt.Sprintf("Предупреждение #%v от %v", i+1, moderatorDiscordUser.Username),
 			Value:       warn.ID.Hex(),
-			Description: fmt.Sprintf("Айди: %v", warn.ID.Hex()),
+			Description: fmt.Sprintf("Причина: %v", warn.Reason),
 			Emoji: discordgo.ComponentEmoji{
 				Name: msg.ReportEmoji.Name,
 				ID:   msg.ReportEmoji.ID,
@@ -302,6 +323,10 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 						{
 							Name:  "Время выдачи",
 							Value: fmt.Sprintf("<t:%v>", warning.Time.Unix()),
+						},
+						{
+							Name:  "Причина",
+							Value: warning.Reason,
 						},
 						{
 							Name:  "Пользователь",

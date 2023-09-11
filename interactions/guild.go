@@ -59,8 +59,8 @@ var GuildApplicationCommand = &discordgo.ApplicationCommand{
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionSubCommand,
-					Name:        "add",
-					Description: "Добавить причину наказания",
+					Name:        "create",
+					Description: "Создать причину наказания",
 					Options: []*discordgo.ApplicationCommandOption{
 						{
 							Type:        discordgo.ApplicationCommandOptionString,
@@ -100,7 +100,7 @@ func guildChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 	case "update":
 		guildUpdateChatCommandHandler(session, interactionCreate)
 	case "reasons":
-		guildRulesChatCommandHandler(session, interactionCreate)
+		guildReasonsChatCommandHandler(session, interactionCreate)
 	default:
 		interactionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
 	}
@@ -261,15 +261,15 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 	}
 }
 
-func guildRulesChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func guildReasonsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	switch interactionCreate.ApplicationCommandData().Options[0].Options[0].Name {
-	case "add":
-		guildRulesAddChatCommandHandler(session, interactionCreate)
+	case "create":
+		guildReasonsCreateChatCommandHandler(session, interactionCreate)
 	case "view":
 		guildRulesViewChatCommandHandler(session, interactionCreate)
 	}
 }
-func guildRulesAddChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func guildReasonsCreateChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{

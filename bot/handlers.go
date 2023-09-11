@@ -19,7 +19,7 @@ var Handlers = []interface{}{
 		}
 	},
 	func(session *discordgo.Session, guildMemberRemove *discordgo.GuildMemberRemove) {
-		err := db.DeleteUser(guildMemberRemove.User.ID)
+		err := db.RemoveUser(guildMemberRemove.User.ID)
 		if err != nil {
 			fmt.Printf("Error removing user: %v", err)
 		}
