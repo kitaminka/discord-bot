@@ -7,6 +7,7 @@ import (
 	"github.com/kitaminka/discord-bot/msg"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -48,16 +49,13 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 
 	warnTime := time.Now()
 
-	reasonID, err := primitive.ObjectIDFromHex(reasonString)
+	reasonIndex, err := strconv.Atoi(reasonString)
 	if err != nil {
-		log.Printf("Error getting object ID: %v", err)
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		return
 	}
-	reason, err := db.GetReason(reasonID)
-	if err != nil {
-		log.Printf("Error getting reason: %v", err)
-		return
-	}
+
+	reason := msg.Reasons[reasonIndex]
 
 	err = db.CreateWarning(db.Warning{
 		Time:        warnTime,

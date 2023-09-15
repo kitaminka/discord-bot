@@ -3,6 +3,7 @@ package interactions
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/msg"
 	"log"
 )
 
@@ -136,11 +137,11 @@ var (
 					Required:    true,
 				},
 				{
-					Type:         discordgo.ApplicationCommandOptionString,
-					Name:         "причина",
-					Description:  "Причина выдачи предупреждения",
-					Autocomplete: true,
-					Required:     true,
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "причина",
+					Description: "Причина выдачи предупреждения",
+					Required:    true,
+					Choices:     msg.ReasonChoices,
 				},
 			},
 			DMPermission:             new(bool),
@@ -185,11 +186,11 @@ var (
 					Required:    true,
 				},
 				{
-					Type:         discordgo.ApplicationCommandOptionString,
-					Name:         "причина",
-					Description:  "Причина выдачи мута",
-					Autocomplete: true,
-					Required:     true,
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "причина",
+					Description: "Причина выдачи мута",
+					Choices:     msg.ReasonChoices,
+					Required:    true,
 				},
 			},
 			DMPermission:             new(bool),
@@ -218,9 +219,10 @@ var (
 func CreateApplicationCommands(session *discordgo.Session) {
 	commands, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, "", Commands)
 	if err != nil {
-		log.Panic("Error creating commands")
+		log.Panicf("Error creating commands: %v", err)
 	}
-	log.Print("Successfully created commands")
+
+	log.Print("Created commands")
 
 	Commands = commands
 }

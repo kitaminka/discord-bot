@@ -15,14 +15,18 @@ type StructuredTextField struct {
 	Value string
 }
 
-func (structuredDescription StructuredText) ToString() string {
-	result := structuredDescription.Text
+func init() {
+	LoadReasons()
+}
 
-	if len(structuredDescription.Fields) > 0 {
+func (structuredText StructuredText) ToString() string {
+	result := structuredText.Text
+
+	if len(structuredText.Fields) > 0 {
 		result += "\n\n"
 	}
 
-	for _, field := range structuredDescription.Fields {
+	for _, field := range structuredText.Fields {
 		messageEmoji := field.Emoji.MessageFormat()
 
 		if len(messageEmoji) != 0 {

@@ -3,11 +3,10 @@ package interactions
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -48,16 +47,13 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 
 	until := time.Now().Add(duration)
 
-	reasonID, err := primitive.ObjectIDFromHex(reasonString)
+	reasonIndex, err := strconv.Atoi(reasonString)
 	if err != nil {
-		log.Printf("Error getting object ID: %v", err)
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		return
 	}
-	reason, err := db.GetReason(reasonID)
-	if err != nil {
-		log.Printf("Error getting reason: %v", err)
-		return
-	}
+
+	reason := msg.Reasons[reasonIndex]
 
 	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &until, discordgo.WithAuditLogReason(url.QueryEscape(reason.Name)))
 	if err != nil {
