@@ -1,7 +1,6 @@
 package interactions
 
 import (
-	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
@@ -52,37 +51,6 @@ var GuildApplicationCommand = &discordgo.ApplicationCommand{
 			Name:        "view",
 			Description: "Просмотреть настройки сервера",
 		},
-		{
-			Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
-			Name:        "reasons",
-			Description: "Управление причинами наказаний",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionSubCommand,
-					Name:        "create",
-					Description: "Создать причину наказания",
-					Options: []*discordgo.ApplicationCommandOption{
-						{
-							Type:        discordgo.ApplicationCommandOptionString,
-							Name:        "название",
-							Description: "Короткое название причины",
-							Required:    true,
-						},
-						{
-							Type:        discordgo.ApplicationCommandOptionString,
-							Name:        "описание",
-							Description: "Подробное описание причины предупреждения",
-							Required:    true,
-						},
-					},
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionSubCommand,
-					Name:        "view",
-					Description: "Просмотреть причины наказаний",
-				},
-			},
-		},
 	},
 	DMPermission:             new(bool),
 	DefaultMemberPermissions: &AdministratorPermission,
@@ -99,8 +67,6 @@ func guildChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 		guildViewChatCommandHandler(session, interactionCreate)
 	case "update":
 		guildUpdateChatCommandHandler(session, interactionCreate)
-	case "reasons":
-		guildReasonsChatCommandHandler(session, interactionCreate)
 	default:
 		InteractionRespondError(session, interactionCreate.Interaction, "Неизвестная подкоманда.")
 	}
@@ -252,130 +218,6 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 				Title:       "Настройки сервера обновлены",
 				Description: structuredDescription.ToString(),
 				Color:       msg.DefaultEmbedColor,
-			},
-		},
-	})
-	if err != nil {
-		log.Printf("Error editing interaction response: %v", err)
-		return
-	}
-}
-
-func guildReasonsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	switch interactionCreate.ApplicationCommandData().Options[0].Options[0].Name {
-	case "create":
-		guildReasonsCreateChatCommandHandler(session, interactionCreate)
-	case "view":
-		guildRulesViewChatCommandHandler(session, interactionCreate)
-	}
-}
-func guildReasonsCreateChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		log.Printf("Error responding to interaction: %v", err)
-		return
-	}
-
-	var name, description string
-
-	for _, option := range interactionCreate.ApplicationCommandData().Options[0].Options[0].Options {
-		switch option.Name {
-		case "название":
-			name = option.StringValue()
-		case "описание":
-			description = option.StringValue()
-		}
-	}
-
-	err = db.CreateReason(db.Reason{
-		Name:        name,
-		Description: description,
-	})
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при добавлении правила.")
-		log.Printf("Error adding guild rule: %v", err)
-		return
-	}
-
-	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-		Embeds: &[]*discordgo.MessageEmbed{
-			{
-				Title: "Причина добавлена",
-				Description: msg.StructuredText{
-					Text: "Причина была успешно добавлена.",
-					Fields: []*msg.StructuredTextField{
-						{
-							Name:  "Название",
-							Value: name,
-						},
-						{
-							Name:  "Описание",
-							Value: description,
-						},
-					},
-				}.ToString(),
-				Color: msg.DefaultEmbedColor,
-			},
-		},
-	})
-	if err != nil {
-		log.Printf("Error editing interaction response: %v", err)
-		return
-	}
-}
-func guildRulesViewChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		log.Printf("Error responding to interaction: %v", err)
-		return
-	}
-
-	var (
-		reasons []db.Reason
-		fields  []*discordgo.MessageEmbedField
-	)
-
-	reasons, err = db.GetReasons()
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при просмотре причин.")
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
-	for _, reason := range reasons {
-		fields = append(fields, &discordgo.MessageEmbedField{
-			Name: reason.Name,
-			Value: msg.StructuredText{
-				Fields: []*msg.StructuredTextField{
-					{
-						Name:  "ID",
-						Value: reason.ID.Hex(),
-					},
-					{
-						Name:  "Описание",
-						Value: fmt.Sprintf("```%v```", reason.Description),
-					},
-				},
-			}.ToString(),
-		})
-	}
-
-	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-		Embeds: &[]*discordgo.MessageEmbed{
-			{
-				Title:  "Причины",
-				Fields: fields,
-				Color:  msg.DefaultEmbedColor,
 			},
 		},
 	})
