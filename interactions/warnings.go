@@ -102,20 +102,87 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 
 	message := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
 
-	perms, err := session.UserChannelPermissions(message.Author.ID, interactionCreate.ChannelID)
-	if err != nil {
-		log.Printf("Error getting user permissions: %v", err)
-	}
-	fmt.Println(perms)
-
-	if interactionCreate.Member.User.ID == message.Author.ID {
-		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на своё сообщение.")
-		return
-	}
-
 	if message.Author.Bot {
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на сообщение бота.")
 		return
+	}
+
+	perms, err := session.UserChannelPermissions(message.Author.ID, interactionCreate.ChannelID)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error getting user permissions: %v", err)
+		return
+	}
+
+	guild, err := session.Guild(interactionCreate.GuildID)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error getting guild: %v", err)
+		return
+	}
+
+	if perms&discordgo.PermissionModerateMembers != 0 && interactionCreate.Member.User.ID == guild.OwnerID {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
+		return
+	}
+
+	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Title: "Выдача предупреждения",
+					Description: msg.StructuredText{
+						Text: "Выберите причину предупреждения.",
+						Fields: []*msg.StructuredTextField{
+							{
+								Name:  "Пользователь",
+								Value: msg.UserMention(message.Author),
+							},
+							{
+								Name:  "Сообщение",
+								Value: fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, message.ID),
+							},
+						},
+					}.ToString(),
+					Color: msg.DefaultEmbedColor,
+				},
+			},
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						createWarnSelectMenu(),
+					},
+				},
+			},
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+}
+func createWarnSelectMenu() discordgo.SelectMenu {
+	var selectMenuOptions []discordgo.SelectMenuOption
+
+	for i, reason := range msg.Reasons {
+		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
+			Label:       reason.Name,
+			Value:       strconv.Itoa(i),
+			Description: reason.Description,
+			Emoji: discordgo.ComponentEmoji{
+				Name: msg.ReportEmoji.Name,
+				ID:   msg.ReportEmoji.ID,
+			},
+		})
+	}
+
+	return discordgo.SelectMenu{
+		MenuType:    discordgo.StringSelectMenu,
+		CustomID:    "warn",
+		Placeholder: "Выберите причину",
+		Options:     selectMenuOptions,
 	}
 }
 
