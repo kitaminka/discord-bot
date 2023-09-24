@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -31,68 +32,7 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		}
 	}
 
-	if discordUser.Bot {
-		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
-		return
-	}
-
-	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		log.Printf("Error responding to interaction: %v", err)
-		return
-	}
-
-	warnTime := time.Now()
-
-	reasonIndex, err := strconv.Atoi(reasonString)
-	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
-		return
-	}
-
-	reason := Reasons[reasonIndex]
-
-	err = db.CreateWarning(db.Warning{
-		Time:        warnTime,
-		Reason:      reason.Name,
-		UserID:      discordUser.ID,
-		ModeratorID: interactionCreate.Member.User.ID,
-	})
-
-	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-		Embeds: &[]*discordgo.MessageEmbed{
-			{
-				Title: "Предупреждение выдано",
-				Description: msg.StructuredText{
-					Text: "Предупреждение успешно выдано.",
-					Fields: []*msg.StructuredTextField{
-						{
-							Name:  "Время выдачи",
-							Value: fmt.Sprintf("<t:%v>", warnTime.Unix()),
-						},
-						{
-							Name:  "Причина",
-							Value: reason.Name,
-						},
-						{
-							Name:  "Пользователь",
-							Value: msg.UserMention(discordUser),
-						},
-						{
-							Name:  "Модератор",
-							Value: msg.UserMention(interactionCreate.Member.User),
-						},
-					},
-				}.ToString(),
-				Color: msg.DefaultEmbedColor,
-			},
-		},
-	})
+	createWarning(session, interactionCreate, discordUser, reasonString)
 }
 func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
@@ -151,7 +91,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 			Components: []discordgo.MessageComponent{
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
-						createWarnSelectMenu(),
+						createWarnSelectMenu(message.Author.ID),
 					},
 				},
 			},
@@ -163,13 +103,13 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 		return
 	}
 }
-func createWarnSelectMenu() discordgo.SelectMenu {
+func createWarnSelectMenu(userID string) discordgo.SelectMenu {
 	var selectMenuOptions []discordgo.SelectMenuOption
 
 	for i, reason := range Reasons {
 		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
 			Label:       reason.Name,
-			Value:       strconv.Itoa(i),
+			Value:       fmt.Sprintf("%v_%v", userID, i),
 			Description: reason.Description,
 			Emoji: discordgo.ComponentEmoji{
 				Name: msg.ReportEmoji.Name,
@@ -180,13 +120,13 @@ func createWarnSelectMenu() discordgo.SelectMenu {
 
 	return discordgo.SelectMenu{
 		MenuType:    discordgo.StringSelectMenu,
-		CustomID:    "warn",
+		CustomID:    "create_warning",
 		Placeholder: "Выберите причину",
 		Options:     selectMenuOptions,
 	}
 }
 
-func createRemWarnSelectMenu(session *discordgo.Session, warnings []db.Warning) (discordgo.SelectMenu, error) {
+func createRemWarnsSelectMenu(session *discordgo.Session, warnings []db.Warning) (discordgo.SelectMenu, error) {
 	var selectMenuOptions []discordgo.SelectMenuOption
 
 	for i, warn := range warnings {
@@ -214,7 +154,7 @@ func createRemWarnSelectMenu(session *discordgo.Session, warnings []db.Warning) 
 	}, nil
 }
 
-func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+func remWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
 		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
 		return
@@ -265,7 +205,7 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 		return
 	}
 
-	remWarnSelectMenu, err := createRemWarnSelectMenu(session, warnings)
+	remWarnSelectMenu, err := createRemWarnsSelectMenu(session, warnings)
 	if err != nil {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждений. Свяжитесь с администрацией.")
 		log.Printf("Error creating select menu: %v", err)
@@ -294,6 +234,27 @@ func remWarnChatCommandHandler(session *discordgo.Session, interactionCreate *di
 	}
 }
 
+func createWarningHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	values := strings.Split(interactionCreate.MessageComponentData().Values[0], "_")
+
+	userID := values[0]
+	reasonString := values[1]
+
+	discordUser, err := session.User(userID)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
+		return
+	}
+
+	createWarning(session, interactionCreate, discordUser, reasonString)
+
+}
 func removeWarningHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
 		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
@@ -357,7 +318,7 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 			Components: &[]discordgo.MessageComponent{},
 		})
 	} else {
-		remWarnSelectMenu, err := createRemWarnSelectMenu(session, warnings)
+		remWarnSelectMenu, err := createRemWarnsSelectMenu(session, warnings)
 		if err != nil {
 			log.Printf("Error creating select menu: %v", err)
 		} else {
@@ -412,4 +373,70 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 		log.Printf("Error creating followup message: %v", err)
 		return
 	}
+}
+
+func createWarning(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User, reasonString string) {
+	if discordUser.Bot {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
+		return
+	}
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	warnTime := time.Now()
+
+	reasonIndex, err := strconv.Atoi(reasonString)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error getting reasonIndex: %v", err)
+		return
+	}
+
+	reason := Reasons[reasonIndex]
+
+	err = db.CreateWarning(db.Warning{
+		Time:        warnTime,
+		Reason:      reason.Name,
+		UserID:      discordUser.ID,
+		ModeratorID: interactionCreate.Member.User.ID,
+	})
+
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
+			{
+				Title: "Предупреждение выдано",
+				Description: msg.StructuredText{
+					Text: "Предупреждение успешно выдано.",
+					Fields: []*msg.StructuredTextField{
+						{
+							Name:  "Время выдачи",
+							Value: fmt.Sprintf("<t:%v>", warnTime.Unix()),
+						},
+						{
+							Name:  "Причина",
+							Value: reason.Name,
+						},
+						{
+							Name:  "Пользователь",
+							Value: msg.UserMention(discordUser),
+						},
+						{
+							Name:  "Модератор",
+							Value: msg.UserMention(interactionCreate.Member.User),
+						},
+					},
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
+			},
+		},
+	})
 }

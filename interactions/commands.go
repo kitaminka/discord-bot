@@ -154,7 +154,7 @@ var (
 		},
 		{
 			Type:        discordgo.ChatApplicationCommand,
-			Name:        "remwarn",
+			Name:        "remwarns",
 			Description: "Снять предупреждения пользователя",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
@@ -209,7 +209,7 @@ var (
 		"top":              topChatCommandHandler,
 		"setreputation":    setReputationChatCommandHandler,
 		"warn":             warnChatCommandHandler,
-		"remwarn":          remWarnChatCommandHandler,
+		"remwarns":         remWarnsChatCommandHandler,
 		"Выдать предупреждение": warnMessageCommandHandler,
 		"mute": muteChatCommandHandler,
 	}

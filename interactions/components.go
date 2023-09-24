@@ -19,6 +19,7 @@ var (
 	}
 	ComponentHandlers = map[string]ComponentHandler{
 		"resolve_report": resolveReportHandler,
+		"create_warning": createWarningHandler,
 		"remove_warning": removeWarningHandler,
 	}
 )
