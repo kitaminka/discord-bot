@@ -53,7 +53,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	reason := msg.Reasons[reasonIndex]
+	reason := Reasons[reasonIndex]
 
 	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &until, discordgo.WithAuditLogReason(url.QueryEscape(reason.Name)))
 	if err != nil {

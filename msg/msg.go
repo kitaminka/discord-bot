@@ -15,10 +15,6 @@ type StructuredTextField struct {
 	Value string
 }
 
-func init() {
-	LoadReasons()
-}
-
 func (structuredText StructuredText) ToString() string {
 	result := structuredText.Text
 

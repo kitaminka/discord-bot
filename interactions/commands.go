@@ -3,7 +3,6 @@ package interactions
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
-	"github.com/kitaminka/discord-bot/msg"
 	"log"
 )
 
@@ -141,7 +140,7 @@ var (
 					Name:        "причина",
 					Description: "Причина выдачи предупреждения",
 					Required:    true,
-					Choices:     msg.ReasonChoices,
+					Choices:     reasonChoices,
 				},
 			},
 			DMPermission:             new(bool),
@@ -189,7 +188,7 @@ var (
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "причина",
 					Description: "Причина выдачи мута",
-					Choices:     msg.ReasonChoices,
+					Choices:     reasonChoices,
 					Required:    true,
 				},
 			},

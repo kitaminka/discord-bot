@@ -55,7 +55,7 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	reason := msg.Reasons[reasonIndex]
+	reason := Reasons[reasonIndex]
 
 	err = db.CreateWarning(db.Warning{
 		Time:        warnTime,
@@ -166,7 +166,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 func createWarnSelectMenu() discordgo.SelectMenu {
 	var selectMenuOptions []discordgo.SelectMenuOption
 
-	for i, reason := range msg.Reasons {
+	for i, reason := range Reasons {
 		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
 			Label:       reason.Name,
 			Value:       strconv.Itoa(i),
