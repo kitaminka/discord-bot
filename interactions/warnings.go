@@ -7,6 +7,7 @@ import (
 	"github.com/kitaminka/discord-bot/msg"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -126,24 +127,28 @@ func createWarnSelectMenu(userID string) discordgo.SelectMenu {
 	}
 }
 
-func createRemWarnsSelectMenu(session *discordgo.Session, warnings []db.Warning) (discordgo.SelectMenu, error) {
-	var selectMenuOptions []discordgo.SelectMenuOption
+func createWarningSelectMenu(session *discordgo.Session, warnings []db.Warning) (discordgo.SelectMenu, error) {
+	if len(warnings) > 25 {
+		warnings = warnings[:25]
+	}
 
-	for i, warn := range warnings {
-		moderatorDiscordUser, err := session.User(warn.ModeratorID)
+	selectMenuOptions := make([]discordgo.SelectMenuOption, len(warnings))
+
+	for i, warning := range warnings {
+		moderatorDiscordUser, err := session.User(warning.ModeratorID)
 		if err != nil {
 			return discordgo.SelectMenu{}, err
 		}
 
-		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
+		selectMenuOptions[i] = discordgo.SelectMenuOption{
 			Label:       fmt.Sprintf("Предупреждение #%v от %v", i+1, moderatorDiscordUser.Username),
-			Value:       warn.ID.Hex(),
-			Description: fmt.Sprintf("Причина: %v", warn.Reason),
+			Value:       warning.ID.Hex(),
+			Description: warning.Reason,
 			Emoji: discordgo.ComponentEmoji{
 				Name: msg.ReportEmoji.Name,
 				ID:   msg.ReportEmoji.ID,
 			},
-		})
+		}
 	}
 
 	return discordgo.SelectMenu{
@@ -152,6 +157,51 @@ func createRemWarnsSelectMenu(session *discordgo.Session, warnings []db.Warning)
 		Placeholder: "Выберите предупреждение",
 		Options:     selectMenuOptions,
 	}, nil
+}
+
+func createWarningEmbedFields(session *discordgo.Session, warnings []db.Warning) ([]*discordgo.MessageEmbedField, error) {
+	if len(warnings) > 25 {
+		warnings = warnings[:25]
+	}
+
+	fields := make([]*discordgo.MessageEmbedField, len(warnings))
+
+	for i, warning := range warnings {
+		moderatorDiscordUser, err := session.User(warning.ModeratorID)
+		if err != nil {
+			return nil, err
+		}
+
+		fields[i] = &discordgo.MessageEmbedField{
+			Name: fmt.Sprintf("Предупреждение #%v", i+1),
+			Value: msg.StructuredText{
+				Fields: []*msg.StructuredTextField{
+					{
+						Name:  "ID",
+						Value: fmt.Sprintf("`%v`", warning.ID.Hex()),
+					},
+					{
+						Name:  "Причина",
+						Value: warning.Reason,
+					},
+					{
+						Name:  "Модератор",
+						Value: msg.UserMention(moderatorDiscordUser),
+					},
+					{
+						Name:  "Время выдачи",
+						Value: fmt.Sprintf("<t:%v>", warning.Time.Unix()),
+					},
+					{
+						Name:  "Истекает через",
+						Value: fmt.Sprintf("<t:%v:R>", warning.Time.Add(db.WarningDuration).Unix()),
+					},
+				},
+			}.ToString(),
+		}
+	}
+
+	return fields, nil
 }
 
 func remWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -205,10 +255,17 @@ func remWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *d
 		return
 	}
 
-	remWarnSelectMenu, err := createRemWarnsSelectMenu(session, warnings)
+	warningSelectMenu, err := createWarningSelectMenu(session, warnings)
 	if err != nil {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждений. Свяжитесь с администрацией.")
 		log.Printf("Error creating select menu: %v", err)
+		return
+	}
+
+	warningFields, err := createWarningEmbedFields(session, warnings)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error creating fields: %v", err)
 		return
 	}
 
@@ -218,12 +275,13 @@ func remWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *d
 				Title:       "Снятие предупреждений",
 				Description: "Выберите предупреждение, которое вы хотите снять.",
 				Color:       msg.DefaultEmbedColor,
+				Fields:      warningFields,
 			},
 		},
 		Components: &[]discordgo.MessageComponent{
 			&discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					remWarnSelectMenu,
+					warningSelectMenu,
 				},
 			},
 		},
@@ -318,20 +376,32 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 			Components: &[]discordgo.MessageComponent{},
 		})
 	} else {
-		remWarnSelectMenu, err := createRemWarnsSelectMenu(session, warnings)
+		warningFields, err := createWarningEmbedFields(session, warnings)
 		if err != nil {
-			log.Printf("Error creating select menu: %v", err)
+			log.Printf("Error creating fields: %v", err)
 		} else {
-			_, _ = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-				Embeds: &interactionCreate.Message.Embeds,
-				Components: &[]discordgo.MessageComponent{
-					&discordgo.ActionsRow{
-						Components: []discordgo.MessageComponent{
-							remWarnSelectMenu,
+			warningSelectMenu, err := createWarningSelectMenu(session, warnings)
+			if err != nil {
+				log.Printf("Error creating select menu: %v", err)
+			} else {
+				_, _ = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+					Embeds: &[]*discordgo.MessageEmbed{
+						{
+							Title:       "Снятие предупреждений",
+							Description: "Выберите предупреждение, которое вы хотите снять.",
+							Color:       msg.DefaultEmbedColor,
+							Fields:      warningFields,
 						},
 					},
-				},
-			})
+					Components: &[]discordgo.MessageComponent{
+						&discordgo.ActionsRow{
+							Components: []discordgo.MessageComponent{
+								warningSelectMenu,
+							},
+						},
+					},
+				})
+			}
 		}
 	}
 
@@ -396,7 +466,7 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 
 	reasonIndex, err := strconv.Atoi(reasonString)
 	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
 		log.Printf("Error getting reasonIndex: %v", err)
 		return
 	}
@@ -409,6 +479,11 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 		UserID:      discordUser.ID,
 		ModeratorID: interactionCreate.Member.User.ID,
 	})
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error creating warning: %v", err)
+		return
+	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
@@ -439,4 +514,89 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 			},
 		},
 	})
+	if err != nil {
+		log.Printf("Error editing interaction response: %v", err)
+	}
+
+	muteUserForWarnings(session, interactionCreate, discordUser)
+}
+
+func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User) {
+	member, err := session.GuildMember(interactionCreate.GuildID, discordUser.ID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error getting member: %v", err)
+		return
+	}
+	if member.CommunicationDisabledUntil != nil && time.Now().After(*member.CommunicationDisabledUntil) {
+		// TODO Add more mute time?
+		fmt.Println("Already muted")
+		return
+	}
+
+	warnings, err := db.GetUserWarnings(discordUser.ID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error getting user warnings: %v", err)
+		return
+	}
+	user, err := db.GetUser(discordUser.ID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
+		return
+	}
+
+	muteDuration := getUserNextMuteDuration(user, warnings)
+	if muteDuration == 0 {
+		return
+	}
+	if muteDuration == MuteDuration {
+		// Only for standard mute
+		err = db.ResetUserMuteCount(discordUser.ID)
+		if err != nil {
+			followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+			log.Printf("Error resetting user mute count: %v", err)
+			return
+		}
+	}
+	muteTime := time.Now().Add(muteDuration)
+	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &muteTime, discordgo.WithAuditLogReason(url.QueryEscape("Количестве предупреждений превышено")))
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error muting user: %v", err)
+		return
+	}
+	err = db.IncrementUserMuteCount(discordUser.ID)
+	if err != nil {
+		log.Printf("Error incrementing user mute count: %v", err)
+		return
+	}
+
+	_, err = session.FollowupMessageCreate(interactionCreate.Interaction, false, &discordgo.WebhookParams{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title: "Мут выдан",
+				Description: msg.StructuredText{
+					Text: "Мут за предупреждения успешно выдан.",
+					Fields: []*msg.StructuredTextField{
+						{
+							Name:  "Пользователь",
+							Value: msg.UserMention(discordUser),
+						},
+						{
+							Name:  "Окончание",
+							Value: fmt.Sprintf("<t:%v:R>", muteTime.Unix()),
+						},
+					},
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
+			},
+		},
+		Flags: discordgo.MessageFlagsEphemeral,
+	})
+	if err != nil {
+		log.Printf("Error creating followup message: %v", err)
+		return
+	}
 }
