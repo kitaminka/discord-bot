@@ -195,6 +195,21 @@ var (
 			DMPermission:             new(bool),
 			DefaultMemberPermissions: &ModeratorPermission,
 		},
+		{
+			Type:        discordgo.ChatApplicationCommand,
+			Name:        "warns",
+			Description: "Просмотреть предупреждения пользователя",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "пользователь",
+					Description: "Пользователь, предупреждения которого вы хотите просмотреть",
+					Required:    true,
+				},
+			},
+			DMPermission:             new(bool),
+			DefaultMemberPermissions: &ModeratorPermission,
+		},
 	}
 	CommandHandlers = map[string]CommandHandler{
 		"Отправить репорт": reportMessageCommandHandler,
@@ -211,7 +226,8 @@ var (
 		"warn":             warnChatCommandHandler,
 		"remwarns":         remWarnsChatCommandHandler,
 		"Выдать предупреждение": warnMessageCommandHandler,
-		"mute": muteChatCommandHandler,
+		"mute":  muteChatCommandHandler,
+		"warns": warnsChatCommandHandler,
 	}
 )
 

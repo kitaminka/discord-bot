@@ -49,6 +49,21 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		}
 	}
 
+	if discordUser.Bot {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать мут боту.")
+		return
+	}
+	isModerator, err := isUserModerator(session, interactionCreate.Interaction, discordUser)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче муиа. Свяжитесь с администрацией.")
+		log.Printf("Error checking if user is moderator: %v", err)
+		return
+	}
+	if isModerator {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать мут себе или другому модератору.")
+		return
+	}
+
 	durationString = strings.ReplaceAll(durationString, " ", "")
 	duration, err := time.ParseDuration(durationString)
 	if err != nil {

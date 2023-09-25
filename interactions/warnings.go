@@ -44,29 +44,19 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 	message := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
 
 	if message.Author.Bot {
-		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение на сообщение бота.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
 		return
 	}
-
-	perms, err := session.UserChannelPermissions(message.Author.ID, interactionCreate.ChannelID)
+	isModerator, err := isUserModerator(session, interactionCreate.Interaction, message.Author)
 	if err != nil {
 		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error getting user permissions: %v", err)
+		log.Printf("Error checking if user is moderator: %v", err)
 		return
 	}
-
-	guild, err := session.Guild(interactionCreate.GuildID)
-	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
-	if perms&discordgo.PermissionModerateMembers != 0 && interactionCreate.Member.User.ID == guild.OwnerID {
+	if isModerator {
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
 		return
 	}
-
 	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -262,20 +252,12 @@ func remWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *d
 		return
 	}
 
-	warningFields, err := createWarningEmbedFields(session, warnings)
-	if err != nil {
-		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при снятии предупреждений. Свяжитесь с администрацией.")
-		log.Printf("Error creating fields: %v", err)
-		return
-	}
-
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title:       "Снятие предупреждений",
 				Description: "Выберите предупреждение, которое вы хотите снять.",
 				Color:       msg.DefaultEmbedColor,
-				Fields:      warningFields,
 			},
 		},
 		Components: &[]discordgo.MessageComponent{
@@ -376,32 +358,26 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 			Components: &[]discordgo.MessageComponent{},
 		})
 	} else {
-		warningFields, err := createWarningEmbedFields(session, warnings)
+		warningSelectMenu, err := createWarningSelectMenu(session, warnings)
 		if err != nil {
-			log.Printf("Error creating fields: %v", err)
+			log.Printf("Error creating select menu: %v", err)
 		} else {
-			warningSelectMenu, err := createWarningSelectMenu(session, warnings)
-			if err != nil {
-				log.Printf("Error creating select menu: %v", err)
-			} else {
-				_, _ = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-					Embeds: &[]*discordgo.MessageEmbed{
-						{
-							Title:       "Снятие предупреждений",
-							Description: "Выберите предупреждение, которое вы хотите снять.",
-							Color:       msg.DefaultEmbedColor,
-							Fields:      warningFields,
+			_, _ = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+				Embeds: &[]*discordgo.MessageEmbed{
+					{
+						Title:       "Снятие предупреждений",
+						Description: "Выберите предупреждение, которое вы хотите снять.",
+						Color:       msg.DefaultEmbedColor,
+					},
+				},
+				Components: &[]discordgo.MessageComponent{
+					&discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{
+							warningSelectMenu,
 						},
 					},
-					Components: &[]discordgo.MessageComponent{
-						&discordgo.ActionsRow{
-							Components: []discordgo.MessageComponent{
-								warningSelectMenu,
-							},
-						},
-					},
-				})
-			}
+				},
+			})
 		}
 	}
 
@@ -450,8 +426,17 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
 		return
 	}
-
-	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+	isModerator, err := isUserModerator(session, interactionCreate.Interaction, discordUser)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error checking if user is moderator: %v", err)
+		return
+	}
+	if isModerator {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
+		return
+	}
+	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags: discordgo.MessageFlagsEphemeral,
@@ -529,8 +514,7 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		return
 	}
 	if member.CommunicationDisabledUntil != nil && time.Now().After(*member.CommunicationDisabledUntil) {
-		// TODO Add more mute time?
-		fmt.Println("Already muted")
+		// Already muted
 		return
 	}
 
@@ -597,6 +581,67 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 	})
 	if err != nil {
 		log.Printf("Error creating followup message: %v", err)
+		return
+	}
+}
+
+func warnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	var discordUser *discordgo.User
+
+	for _, option := range interactionCreate.ApplicationCommandData().Options {
+		switch option.Name {
+		case "пользователь":
+			discordUser = option.UserValue(session)
+		}
+	}
+
+	if discordUser.Bot {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете посмотреть предупреждения бота.")
+		return
+	}
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	warnings, err := db.GetUserWarnings(discordUser.ID)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error getting user warnings: %v", err)
+		return
+	}
+
+	warningFields, err := createWarningEmbedFields(session, warnings)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error creating fields: %v", err)
+		return
+	}
+
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
+			{
+				Title:       "Предупреждения",
+				Description: fmt.Sprintf("Пользователь: %v", msg.UserMention(discordUser)),
+				Fields:      warningFields,
+				Color:       msg.DefaultEmbedColor,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
 }
