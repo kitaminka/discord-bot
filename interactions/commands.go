@@ -210,6 +210,21 @@ var (
 			DMPermission:             new(bool),
 			DefaultMemberPermissions: &ModeratorPermission,
 		},
+		{
+			Type:        discordgo.ChatApplicationCommand,
+			Name:        "resetwarns",
+			Description: "Сбросить предупреждения пользователя",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "пользователь",
+					Description: "Пользователь, предупреждения которого вы хотите сбросить",
+					Required:    true,
+				},
+			},
+			DMPermission:             new(bool),
+			DefaultMemberPermissions: &ModeratorPermission,
+		},
 	}
 	CommandHandlers = map[string]CommandHandler{
 		"Отправить репорт": reportMessageCommandHandler,
@@ -226,8 +241,9 @@ var (
 		"warn":             warnChatCommandHandler,
 		"remwarns":         remWarnsChatCommandHandler,
 		"Выдать предупреждение": warnMessageCommandHandler,
-		"mute":  muteChatCommandHandler,
-		"warns": warnsChatCommandHandler,
+		"mute":       muteChatCommandHandler,
+		"warns":      warnsChatCommandHandler,
+		"resetwarns": resetWarnsChatCommandHandler,
 	}
 )
 

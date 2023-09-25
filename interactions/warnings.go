@@ -633,10 +633,77 @@ func warnsChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
-				Title:       "Предупреждения",
-				Description: fmt.Sprintf("Пользователь: %v", msg.UserMention(discordUser)),
-				Fields:      warningFields,
-				Color:       msg.DefaultEmbedColor,
+				Title: "Предупреждения",
+				Description: msg.StructuredText{
+					Fields: []*msg.StructuredTextField{
+						{
+							Name:  "Пользователь",
+							Value: msg.UserMention(discordUser),
+						},
+					},
+				}.ToString(),
+				Fields: warningFields,
+				Color:  msg.DefaultEmbedColor,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error editing interaction response: %v", err)
+		return
+	}
+}
+
+func resetWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	var discordUser *discordgo.User
+
+	for _, option := range interactionCreate.ApplicationCommandData().Options {
+		switch option.Name {
+		case "пользователь":
+			discordUser = option.UserValue(session)
+		}
+	}
+
+	if discordUser.Bot {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете сбросить предупреждения бота.")
+		return
+	}
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	err = db.RemoveUserWarnings(discordUser.ID)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при сбросе предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error removing user warnings: %v", err)
+		return
+	}
+
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
+			{
+				Title: "Предупреждения сброшены",
+				Description: msg.StructuredText{
+					Fields: []*msg.StructuredTextField{
+						{
+							Name:  "Пользователь",
+							Value: msg.UserMention(discordUser),
+						},
+					},
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
 			},
 		},
 	})
