@@ -107,11 +107,6 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
-	err = logs.LogReputationChange(session, interactionCreate.Member.User, discordUser, reputationChange)
-	if err != nil {
-		log.Printf("Error logging reputation change: %v", err)
-	}
-
 	var title string
 	if like {
 		title = fmt.Sprintf("%v Лайк", msg.LikeEmoji.MessageFormat())
@@ -132,6 +127,11 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
+
+	err = logs.LogReputationChange(session, interactionCreate.Member.User, discordUser, reputationChange)
+	if err != nil {
+		log.Printf("Error logging reputation change: %v", err)
+	}
 }
 
 func topReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -150,7 +150,7 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		return
 	}
 
-	var fields []*discordgo.MessageEmbedField
+	fields := make([]*discordgo.MessageEmbedField, len(users))
 	for i, user := range users {
 		var discordUser *discordgo.User
 		discordUser, err = session.User(user.ID)
@@ -171,10 +171,10 @@ func topReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 			PlaceEmoji = msg.ThirdEmoji
 		}
 
-		fields = append(fields, &discordgo.MessageEmbedField{
+		fields[i] = &discordgo.MessageEmbedField{
 			Name:  fmt.Sprintf("%v #%v. %v", PlaceEmoji.MessageFormat(), i+1, discordUser.Username),
 			Value: fmt.Sprintf("%v **Репутация**: %v", msg.ReputationEmoji.MessageFormat(), user.Reputation),
-		})
+		}
 	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
@@ -262,6 +262,11 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 	if err != nil {
 		log.Printf("Error editing interaction response: %v", err)
 		return
+	}
+
+	err = logs.LogReputationSetting(session, interactionCreate.Member.User, discordUser, reputation)
+	if err != nil {
+		log.Printf("Error logging reputation change: %v", err)
 	}
 }
 func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {

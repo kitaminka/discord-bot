@@ -16,11 +16,11 @@ func LogReputationChange(session *discordgo.Session, user, targetUser *discordgo
 	var description string
 	switch change {
 	case 1:
-		description = fmt.Sprintf("%v поставил лайк %v", msg.UserMention(user), msg.UserMention(targetUser))
+		description = fmt.Sprintf("%v поставил **лайк** %v", msg.UserMention(user), msg.UserMention(targetUser))
 	case -1:
-		description = fmt.Sprintf("%v поставил дизлайк %v", msg.UserMention(user), msg.UserMention(targetUser))
+		description = fmt.Sprintf("%v поставил **дизлайк** %v", msg.UserMention(user), msg.UserMention(targetUser))
 	default:
-		description = fmt.Sprintf("%v изменил репутцию пользователя %v на %v", msg.UserMention(user), msg.UserMention(targetUser), change)
+		description = fmt.Sprintf("%v изменил репутцию пользователя %v на **%v**.", msg.UserMention(user), msg.UserMention(targetUser), change)
 	}
 
 	_, err = session.ChannelMessageSendComplex(guild.ReputationLogChannelID, &discordgo.MessageSend{
@@ -28,6 +28,24 @@ func LogReputationChange(session *discordgo.Session, user, targetUser *discordgo
 			{
 				Title:       "Изменение репутации",
 				Description: description,
+				Color:       msg.DefaultEmbedColor,
+			},
+		},
+	})
+	return err
+}
+
+func LogReputationSetting(session *discordgo.Session, user, targetUser *discordgo.User, value int) error {
+	guild, err := db.GetGuild()
+	if err != nil {
+		return err
+	}
+
+	_, err = session.ChannelMessageSendComplex(guild.ReputationLogChannelID, &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title:       "Установка репутации",
+				Description: fmt.Sprintf("%v установил репутцию пользователя %v на **%v**.", msg.UserMention(user), msg.UserMention(targetUser), value),
 				Color:       msg.DefaultEmbedColor,
 			},
 		},
