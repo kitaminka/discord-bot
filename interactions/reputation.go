@@ -128,10 +128,7 @@ func reputationCommandHandler(session *discordgo.Session, interactionCreate *dis
 		return
 	}
 
-	err = logs.LogReputationChange(session, interactionCreate.Member.User, discordUser, reputationChange)
-	if err != nil {
-		log.Printf("Error logging reputation change: %v", err)
-	}
+	logs.LogReputationChange(session, interactionCreate.Member.User, discordUser, reputationChange)
 }
 
 func topReputationChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -264,10 +261,7 @@ func setReputationChatCommandHandler(session *discordgo.Session, interactionCrea
 		return
 	}
 
-	err = logs.LogReputationSetting(session, interactionCreate.Member.User, discordUser, reputation)
-	if err != nil {
-		log.Printf("Error logging reputation change: %v", err)
-	}
+	logs.LogReputationSetting(session, interactionCreate.Member.User, discordUser, reputation)
 }
 func resetDelayChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {

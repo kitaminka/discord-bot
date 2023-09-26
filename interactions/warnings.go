@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/logs"
 	"github.com/kitaminka/discord-bot/msg"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
@@ -419,6 +420,8 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 		log.Printf("Error creating followup message: %v", err)
 		return
 	}
+
+	logs.LogWarningRemoving(session, moderatorDiscordUser, discordUser, warning.Reason, warning.Time)
 }
 
 func createWarning(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User, reasonString string) {
@@ -503,6 +506,7 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 		log.Printf("Error editing interaction response: %v", err)
 	}
 
+	logs.LogWarningCreation(session, interactionCreate.Member.User, discordUser, reason.Name, warnTime)
 	muteUserForWarnings(session, interactionCreate, discordUser)
 }
 
@@ -711,4 +715,6 @@ func resetWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 		log.Printf("Error editing interaction response: %v", err)
 		return
 	}
+
+	logs.LogWarningResetting(session, interactionCreate.Member.User, discordUser)
 }

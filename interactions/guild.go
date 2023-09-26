@@ -44,6 +44,15 @@ var GuildApplicationCommand = &discordgo.ApplicationCommand{
 					},
 					Required: false,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionChannel,
+					Name:        "канал_для_логирования_модерации",
+					Description: "Канал, где логируется модерация сервера",
+					ChannelTypes: []discordgo.ChannelType{
+						discordgo.ChannelTypeGuildText,
+					},
+					Required: false,
+				},
 			},
 		},
 		{
@@ -128,6 +137,16 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 			Value: reputationLogChannel.Mention(),
 		})
 	}
+	moderationLogChannel, err := session.Channel(guild.ModerationLogChannelID)
+	if err != nil {
+		log.Printf("Error getting moderation log channel: %v", err)
+	} else {
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredTextField{
+			Emoji: msg.ShieldCheckMarkEmoji,
+			Name:  "Канал для логирования модерации",
+			Value: moderationLogChannel.Mention(),
+		})
+	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
@@ -200,6 +219,14 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredTextField{
 				Emoji: msg.ReputationEmoji,
 				Name:  "Канал для логирования репутации",
+				Value: channel.Mention(),
+			})
+		case "канал_для_логирования_модерации":
+			channel := option.ChannelValue(session)
+			server.ModerationLogChannelID = channel.ID
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredTextField{
+				Emoji: msg.ShieldCheckMarkEmoji,
+				Name:  "Канал для логирования модерации",
 				Value: channel.Mention(),
 			})
 		}
