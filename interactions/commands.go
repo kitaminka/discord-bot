@@ -225,6 +225,21 @@ var (
 			DMPermission:             new(bool),
 			DefaultMemberPermissions: &ModeratorPermission,
 		},
+		{
+			Type:        discordgo.ChatApplicationCommand,
+			Name:        "unmute",
+			Description: "Снять мут с пользователя",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "пользователь",
+					Description: "Пользователь, с которого вы хотите снять мут",
+					Required:    true,
+				},
+			},
+			DMPermission:             new(bool),
+			DefaultMemberPermissions: &ModeratorPermission,
+		},
 	}
 	CommandHandlers = map[string]CommandHandler{
 		"Отправить репорт": reportMessageCommandHandler,
@@ -244,6 +259,7 @@ var (
 		"mute":       muteChatCommandHandler,
 		"warns":      warnsChatCommandHandler,
 		"resetwarns": resetWarnsChatCommandHandler,
+		"unmute":     unmuteChatCommandHandler,
 	}
 )
 

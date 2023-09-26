@@ -569,7 +569,7 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 							Value: msg.UserMention(discordUser),
 						},
 						{
-							Name:  "Окончание",
+							Name:  "Окончание мута",
 							Value: fmt.Sprintf("<t:%v:R>", muteTime.Unix()),
 						},
 					},

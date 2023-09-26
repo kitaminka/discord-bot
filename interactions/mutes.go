@@ -80,6 +80,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	reasonIndex, err := strconv.Atoi(reasonString)
 	if err != nil {
 		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error parsing reason index: %v", err)
 		return
 	}
 
@@ -88,6 +89,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &until, discordgo.WithAuditLogReason(url.QueryEscape(reason.Name)))
 	if err != nil {
 		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error muting member: %v", err)
 		return
 	}
 
@@ -101,7 +103,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 						Text: "Мут успешно выдан.",
 						Fields: []*msg.StructuredTextField{
 							{
-								Name:  "Мут истекает",
+								Name:  "Окончание мута",
 								Value: fmt.Sprintf("<t:%v:R>", until.Unix()),
 							},
 							{
@@ -128,4 +130,79 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		log.Printf("Error responding to interaction: %v", err)
 		return
 	}
+}
+
+func unmuteChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	var discordUser *discordgo.User
+
+	for _, option := range interactionCreate.ApplicationCommandData().Options {
+		switch option.Name {
+		case "пользователь":
+			discordUser = option.UserValue(session)
+		}
+	}
+
+	if discordUser.Bot {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете снять мут с бота.")
+		return
+	}
+
+	member, err := session.GuildMember(interactionCreate.GuildID, discordUser.ID)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при снятии мута. Свяжитесь с администрацией.")
+		log.Printf("Error getting member: %v", err)
+		return
+	}
+
+	muteUntil := member.CommunicationDisabledUntil
+
+	if muteUntil == nil || time.Now().After(*muteUntil) {
+		InteractionRespondError(session, interactionCreate.Interaction, "У пользователя нет мута.")
+		return
+	}
+
+	err = db.ResetUserMuteCount(discordUser.ID)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при снятии мута. Свяжитесь с администрацией.")
+		log.Printf("Error resetting user mute count: %v", err)
+		return
+	}
+
+	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, nil, discordgo.WithAuditLogReason(url.QueryEscape(fmt.Sprintf("Снятие мута от %v", interactionCreate.Member.User.Username))))
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при снятии мута. Свяжитесь с администрацией.")
+		log.Printf("Error unmuting member: %v", err)
+		return
+	}
+
+	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Title: "Мут снят",
+					Description: msg.StructuredText{
+						Text: "Мут успешно снят.",
+						Fields: []*msg.StructuredTextField{
+							{
+								Name:  "Пользователь",
+								Value: msg.UserMention(discordUser),
+							},
+							{
+								Name:  "Окончание мута",
+								Value: fmt.Sprintf("<t:%v:R>", muteUntil.Unix()),
+							},
+						},
+					}.ToString(),
+					Color: msg.DefaultEmbedColor,
+				},
+			},
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
 }

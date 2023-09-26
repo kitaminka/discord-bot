@@ -90,7 +90,7 @@ func IncrementUserMuteCount(userID string) error {
 	return err
 }
 func ResetUserMuteCount(userID string) error {
-	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"muteCount", 0}}}}, options.Update().SetUpsert(true))
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"muteCount", 0}, {"lastMuteTime", 0}}}}, options.Update().SetUpsert(true))
 	return err
 }
 
