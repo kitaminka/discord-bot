@@ -529,6 +529,11 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		log.Printf("Error getting user warnings: %v", err)
 		return
 	}
+	if len(warnings) < MuteWarningsCount {
+		// Not enough warnings
+		return
+	}
+
 	user, err := db.GetUser(discordUser.ID)
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
@@ -536,7 +541,7 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		return
 	}
 
-	muteDuration := getUserNextMuteDuration(user, warnings)
+	muteDuration := getUserNextMuteDuration(user)
 	if muteDuration == 0 {
 		return
 	}

@@ -13,11 +13,7 @@ import (
 	"time"
 )
 
-func getUserNextMuteDuration(user db.User, warnings []db.Warning) time.Duration {
-	if len(warnings) < MuteWarningsCount {
-		return 0
-	}
-
+func getUserNextMuteDuration(user db.User) time.Duration {
 	now := time.Now()
 
 	if now.After(user.LastMuteTime.Add(ExtendedMutePeriod + time.Duration(int(MuteDuration)*user.MuteCount))) {
