@@ -60,7 +60,7 @@ func LogWarningRemoving(session *discordgo.Session, moderatorUser, targetUser *d
 	_, err = session.ChannelMessageSendComplex(guild.ModerationLogChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title: "Предупреждение убрано",
+				Title: "Предупреждение снято",
 				Description: msg.StructuredText{
 					Fields: []*msg.StructuredTextField{
 						{
@@ -101,7 +101,7 @@ func LogWarningResetting(session *discordgo.Session, moderatorUser, targetUser *
 	_, err = session.ChannelMessageSendComplex(guild.ModerationLogChannelID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Title: "Предупреждение сброшены",
+				Title: "Предупреждения сброшены",
 				Description: msg.StructuredText{
 					Fields: []*msg.StructuredTextField{
 						{

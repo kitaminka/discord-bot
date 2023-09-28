@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/logs"
 	"github.com/kitaminka/discord-bot/msg"
 	"log"
 	"net/url"
@@ -130,6 +131,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		log.Printf("Error responding to interaction: %v", err)
 		return
 	}
+	logs.LogUserMute(session, interactionCreate.Member.User, discordUser, reason.Name, until)
 }
 
 func unmuteChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -205,4 +207,5 @@ func unmuteChatCommandHandler(session *discordgo.Session, interactionCreate *dis
 			Flags: discordgo.MessageFlagsEphemeral,
 		},
 	})
+	logs.LogUserUnmute(session, interactionCreate.Member.User, discordUser, *muteUntil)
 }

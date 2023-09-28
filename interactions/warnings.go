@@ -517,8 +517,9 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		log.Printf("Error getting member: %v", err)
 		return
 	}
-	if member.CommunicationDisabledUntil != nil && time.Now().After(*member.CommunicationDisabledUntil) {
+	if member.CommunicationDisabledUntil != nil && time.Now().Before(*member.CommunicationDisabledUntil) {
 		// Already muted
+		log.Printf("User %v is already muted", discordUser.Username)
 		return
 	}
 
@@ -548,8 +549,8 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 			return
 		}
 	}
-	muteTime := time.Now().Add(muteDuration)
-	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &muteTime, discordgo.WithAuditLogReason(url.QueryEscape("Количестве предупреждений превышено")))
+	muteUntil := time.Now().Add(muteDuration)
+	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &muteUntil, discordgo.WithAuditLogReason(url.QueryEscape("Количестве предупреждений превышено")))
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		log.Printf("Error muting user: %v", err)
@@ -574,7 +575,7 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 						},
 						{
 							Name:  "Окончание мута",
-							Value: fmt.Sprintf("<t:%v:R>", muteTime.Unix()),
+							Value: fmt.Sprintf("<t:%v:R>", muteUntil.Unix()),
 						},
 					},
 				}.ToString(),
@@ -587,6 +588,7 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		log.Printf("Error creating followup message: %v", err)
 		return
 	}
+	logs.LogUserMute(session, interactionCreate.Member.User, discordUser, "Количестве предупреждений превышено", muteUntil)
 }
 
 func warnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
