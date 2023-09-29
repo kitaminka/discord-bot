@@ -421,6 +421,7 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
+	notifyUserWarning(session, discordUser.ID, warning.Time, false, "")
 	logs.LogWarningRemoving(session, moderatorDiscordUser, discordUser, warning.Reason, warning.Time)
 }
 
@@ -450,7 +451,7 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 		return
 	}
 
-	warnTime := time.Now()
+	warningTime := time.Now()
 
 	reasonIndex, err := strconv.Atoi(reasonString)
 	if err != nil {
@@ -462,7 +463,7 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 	reason := Reasons[reasonIndex]
 
 	err = db.CreateWarning(db.Warning{
-		Time:        warnTime,
+		Time:        warningTime,
 		Reason:      reason.Name,
 		UserID:      discordUser.ID,
 		ModeratorID: interactionCreate.Member.User.ID,
@@ -482,7 +483,7 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 					Fields: []*msg.StructuredTextField{
 						{
 							Name:  "Время выдачи",
-							Value: fmt.Sprintf("<t:%v>", warnTime.Unix()),
+							Value: fmt.Sprintf("<t:%v>", warningTime.Unix()),
 						},
 						{
 							Name:  "Причина",
@@ -506,7 +507,8 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 		log.Printf("Error editing interaction response: %v", err)
 	}
 
-	logs.LogWarningCreation(session, interactionCreate.Member.User, discordUser, reason.Name, warnTime)
+	notifyUserWarning(session, discordUser.ID, warningTime, true, reason.Description)
+	logs.LogWarningCreation(session, interactionCreate.Member.User, discordUser, reason.Name, warningTime)
 	muteUserForWarnings(session, interactionCreate, discordUser)
 }
 
@@ -542,9 +544,6 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 	}
 
 	muteDuration := getUserNextMuteDuration(user)
-	if muteDuration == 0 {
-		return
-	}
 	if muteDuration == MuteDuration {
 		// Only for standard mute
 		err = db.ResetUserMuteCount(discordUser.ID)

@@ -100,7 +100,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 						Text: "Мут успешно выдан.",
 						Fields: []*msg.StructuredTextField{
 							{
-								Name:  "Окончание мута",
+								Name:  "Время окончания",
 								Value: fmt.Sprintf("<t:%v:R>", until.Unix()),
 							},
 							{
@@ -192,7 +192,7 @@ func unmuteChatCommandHandler(session *discordgo.Session, interactionCreate *dis
 								Value: msg.UserMention(discordUser),
 							},
 							{
-								Name:  "Окончание мута",
+								Name:  "Время окончания",
 								Value: fmt.Sprintf("<t:%v:R>", muteUntil.Unix()),
 							},
 						},
