@@ -12,10 +12,7 @@ var (
 		CustomID: "resolve_report",
 		Label:    "Рассмотрено",
 		Style:    discordgo.SecondaryButton,
-		Emoji: discordgo.ComponentEmoji{
-			Name: msg.CheckMarkEmoji.Name,
-			ID:   msg.CheckMarkEmoji.ID,
-		},
+		Emoji:    msg.ToComponentEmoji(msg.CheckMarkEmoji),
 	}
 	ComponentHandlers = map[string]ComponentHandler{
 		"resolve_report": resolveReportHandler,
