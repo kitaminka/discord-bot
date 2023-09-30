@@ -3,20 +3,12 @@ package logs
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
-	"log"
 	"time"
 )
 
 func LogWarningCreation(session *discordgo.Session, moderatorUser, targetUser *discordgo.User, reason string, warnTime time.Time) {
-	guild, err := db.GetGuild()
-	if err != nil {
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
-	_, err = session.ChannelMessageSendComplex(guild.ModerationLogChannelID, &discordgo.MessageSend{
+	sendLogMessage(session, ModerationLog, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Предупреждение выдано",
@@ -44,20 +36,10 @@ func LogWarningCreation(session *discordgo.Session, moderatorUser, targetUser *d
 			},
 		},
 	})
-	if err != nil {
-		log.Printf("Error logging warning creation: %v", err)
-		return
-	}
 }
 
 func LogWarningRemoving(session *discordgo.Session, moderatorUser, targetUser *discordgo.User, reason string, warnTime time.Time) {
-	guild, err := db.GetGuild()
-	if err != nil {
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
-	_, err = session.ChannelMessageSendComplex(guild.ModerationLogChannelID, &discordgo.MessageSend{
+	sendLogMessage(session, ModerationLog, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Предупреждение снято",
@@ -85,20 +67,10 @@ func LogWarningRemoving(session *discordgo.Session, moderatorUser, targetUser *d
 			},
 		},
 	})
-	if err != nil {
-		log.Printf("Error logging warning creation: %v", err)
-		return
-	}
 }
 
 func LogWarningResetting(session *discordgo.Session, moderatorUser, targetUser *discordgo.User) {
-	guild, err := db.GetGuild()
-	if err != nil {
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
-	_, err = session.ChannelMessageSendComplex(guild.ModerationLogChannelID, &discordgo.MessageSend{
+	sendLogMessage(session, ModerationLog, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Предупреждения сброшены",
@@ -118,8 +90,4 @@ func LogWarningResetting(session *discordgo.Session, moderatorUser, targetUser *
 			},
 		},
 	})
-	if err != nil {
-		log.Printf("Error logging warning creation: %v", err)
-		return
-	}
 }

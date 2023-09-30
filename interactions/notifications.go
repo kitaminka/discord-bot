@@ -10,12 +10,6 @@ import (
 )
 
 func notifyUserWarning(session *discordgo.Session, userID string, warningTime time.Time, created bool, description string) {
-	channel, err := session.UserChannelCreate(userID)
-	if err != nil {
-		log.Printf("Error creating user channel: %v", err)
-		return
-	}
-
 	var embed *discordgo.MessageEmbed
 	if created {
 		embed = &discordgo.MessageEmbed{
@@ -50,25 +44,15 @@ func notifyUserWarning(session *discordgo.Session, userID string, warningTime ti
 		}
 	}
 
-	_, err = session.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+	sendUserNotification(session, userID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			embed,
 		},
 	})
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
-		return
-	}
 }
 
 func notifyUserWarningReset(session *discordgo.Session, userID string) {
-	channel, err := session.UserChannelCreate(userID)
-	if err != nil {
-		log.Printf("Error creating user channel: %v", err)
-		return
-	}
-
-	_, err = session.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+	sendUserNotification(session, userID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       "Ваши предупреждения сброшены",
@@ -77,19 +61,9 @@ func notifyUserWarningReset(session *discordgo.Session, userID string) {
 			},
 		},
 	})
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
-		return
-	}
 }
 
 func notifyUserMute(session *discordgo.Session, userID string, muteUntil time.Time, created bool, description string) {
-	channel, err := session.UserChannelCreate(userID)
-	if err != nil {
-		log.Printf("Error creating user channel: %v", err)
-		return
-	}
-
 	var embed *discordgo.MessageEmbed
 	if created {
 		embed = &discordgo.MessageEmbed{
@@ -120,11 +94,21 @@ func notifyUserMute(session *discordgo.Session, userID string, muteUntil time.Ti
 		}
 	}
 
-	_, err = session.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+	sendUserNotification(session, userID, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			embed,
 		},
 	})
+}
+
+func sendUserNotification(session *discordgo.Session, userID string, message *discordgo.MessageSend) {
+	channel, err := session.UserChannelCreate(userID)
+	if err != nil {
+		log.Printf("Error creating user channel: %v", err)
+		return
+	}
+
+	_, err = session.ChannelMessageSendComplex(channel.ID, message)
 	if err != nil {
 		log.Printf("Error sending message: %v", err)
 		return

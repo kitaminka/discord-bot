@@ -3,20 +3,12 @@ package logs
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
-	"log"
 	"time"
 )
 
 func LogUserMute(session *discordgo.Session, moderatorUser, targetUser *discordgo.User, reason string, muteUntil time.Time) {
-	guild, err := db.GetGuild()
-	if err != nil {
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
-	_, err = session.ChannelMessageSendComplex(guild.ModerationLogChannelID, &discordgo.MessageSend{
+	sendLogMessage(session, ModerationLog, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Мут выдан",
@@ -44,20 +36,10 @@ func LogUserMute(session *discordgo.Session, moderatorUser, targetUser *discordg
 			},
 		},
 	})
-	if err != nil {
-		log.Printf("Error logging warning creation: %v", err)
-		return
-	}
 }
 
 func LogUserUnmute(session *discordgo.Session, moderatorUser, targetUser *discordgo.User, muteUntil time.Time) {
-	guild, err := db.GetGuild()
-	if err != nil {
-		log.Printf("Error getting guild: %v", err)
-		return
-	}
-
-	_, err = session.ChannelMessageSendComplex(guild.ModerationLogChannelID, &discordgo.MessageSend{
+	sendLogMessage(session, ModerationLog, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title: "Мут снят",
@@ -81,8 +63,4 @@ func LogUserUnmute(session *discordgo.Session, moderatorUser, targetUser *discor
 			},
 		},
 	})
-	if err != nil {
-		log.Printf("Error logging warning creation: %v", err)
-		return
-	}
 }
