@@ -240,6 +240,12 @@ var (
 			DMPermission:             new(bool),
 			DefaultMemberPermissions: &ModeratorPermission,
 		},
+		{
+			Type:         discordgo.ChatApplicationCommand,
+			Name:         "info",
+			Description:  "Просмотреть информацию о боте",
+			DMPermission: new(bool),
+		},
 	}
 	CommandHandlers = map[string]CommandHandler{
 		"Отправить репорт": reportMessageCommandHandler,
@@ -260,6 +266,7 @@ var (
 		"warns":      warnsChatCommandHandler,
 		"resetwarns": resetWarnsChatCommandHandler,
 		"unmute":     unmuteChatCommandHandler,
+		"info":       infoChatCommandHandler,
 	}
 )
 
