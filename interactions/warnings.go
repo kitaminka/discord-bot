@@ -724,5 +724,6 @@ func resetWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 		return
 	}
 
+	go notifyUserWarningReset(session, discordUser.ID)
 	go logs.LogWarningResetting(session, interactionCreate.Member.User, discordUser)
 }
