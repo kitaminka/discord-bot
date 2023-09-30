@@ -60,3 +60,51 @@ func notifyUserWarning(session *discordgo.Session, userID string, warningTime ti
 		return
 	}
 }
+
+func notifyUserMute(session *discordgo.Session, userID string, muteUntil time.Time, created bool, description string) {
+	channel, err := session.UserChannelCreate(userID)
+	if err != nil {
+		log.Printf("Error creating user channel: %v", err)
+		return
+	}
+
+	var embed *discordgo.MessageEmbed
+	if created {
+		embed = &discordgo.MessageEmbed{
+			Title: "Вам выдан мут",
+			Description: msg.StructuredText{
+				Text: description,
+				Fields: []*msg.StructuredTextField{
+					{
+						Name:  "Время окончания",
+						Value: fmt.Sprintf("<t:%v:R>", muteUntil.Unix()),
+					},
+				},
+			}.ToString(),
+			Color: msg.DefaultEmbedColor,
+		}
+	} else {
+		embed = &discordgo.MessageEmbed{
+			Title: "С вас снят мут",
+			Description: msg.StructuredText{
+				Fields: []*msg.StructuredTextField{
+					{
+						Name:  "Время окончания",
+						Value: fmt.Sprintf("<t:%v:R>", muteUntil.Unix()),
+					},
+				},
+			}.ToString(),
+			Color: msg.DefaultEmbedColor,
+		}
+	}
+
+	_, err = session.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{
+			embed,
+		},
+	})
+	if err != nil {
+		log.Printf("Error sending message: %v", err)
+		return
+	}
+}

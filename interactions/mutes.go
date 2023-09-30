@@ -72,7 +72,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		return
 	}
 
-	until := time.Now().Add(duration)
+	muteUntil := time.Now().Add(duration)
 
 	reasonIndex, err := strconv.Atoi(reasonString)
 	if err != nil {
@@ -83,7 +83,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 
 	reason := Reasons[reasonIndex]
 
-	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &until, discordgo.WithAuditLogReason(url.QueryEscape(reason.Name)))
+	err = session.GuildMemberTimeout(interactionCreate.GuildID, discordUser.ID, &muteUntil, discordgo.WithAuditLogReason(url.QueryEscape(reason.Name)))
 	if err != nil {
 		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		log.Printf("Error muting member: %v", err)
@@ -101,7 +101,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 						Fields: []*msg.StructuredTextField{
 							{
 								Name:  "Время окончания",
-								Value: fmt.Sprintf("<t:%v:R>", until.Unix()),
+								Value: fmt.Sprintf("<t:%v:R>", muteUntil.Unix()),
 							},
 							{
 								Name:  "Причина",
@@ -127,7 +127,9 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 		log.Printf("Error responding to interaction: %v", err)
 		return
 	}
-	logs.LogUserMute(session, interactionCreate.Member.User, discordUser, reason.Name, until)
+
+	go notifyUserMute(session, discordUser.ID, muteUntil, true, reason.Description)
+	go logs.LogUserMute(session, interactionCreate.Member.User, discordUser, reason.Name, muteUntil)
 }
 
 func unmuteChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -203,5 +205,7 @@ func unmuteChatCommandHandler(session *discordgo.Session, interactionCreate *dis
 			Flags: discordgo.MessageFlagsEphemeral,
 		},
 	})
-	logs.LogUserUnmute(session, interactionCreate.Member.User, discordUser, *muteUntil)
+
+	go notifyUserMute(session, discordUser.ID, *muteUntil, false, "")
+	go logs.LogUserUnmute(session, interactionCreate.Member.User, discordUser, *muteUntil)
 }

@@ -421,8 +421,8 @@ func removeWarningHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
-	notifyUserWarning(session, discordUser.ID, warning.Time, false, "")
-	logs.LogWarningRemoving(session, moderatorDiscordUser, discordUser, warning.Reason, warning.Time)
+	go notifyUserWarning(session, discordUser.ID, warning.Time, false, "")
+	go logs.LogWarningRemoving(session, moderatorDiscordUser, discordUser, warning.Reason, warning.Time)
 }
 
 func createWarning(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User, reasonString string) {
@@ -507,9 +507,9 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 		log.Printf("Error editing interaction response: %v", err)
 	}
 
-	notifyUserWarning(session, discordUser.ID, warningTime, true, reason.Description)
-	logs.LogWarningCreation(session, interactionCreate.Member.User, discordUser, reason.Name, warningTime)
-	muteUserForWarnings(session, interactionCreate, discordUser)
+	go notifyUserWarning(session, discordUser.ID, warningTime, true, reason.Description)
+	go logs.LogWarningCreation(session, interactionCreate.Member.User, discordUser, reason.Name, warningTime)
+	go muteUserForWarnings(session, interactionCreate, discordUser)
 }
 
 func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User) {
@@ -592,7 +592,9 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		log.Printf("Error creating followup message: %v", err)
 		return
 	}
-	logs.LogUserMute(session, interactionCreate.Member.User, discordUser, "Количестве предупреждений превышено", muteUntil)
+
+	go notifyUserMute(session, discordUser.ID, muteUntil, true, "Количестве предупреждений превышено")
+	go logs.LogUserMute(session, interactionCreate.Member.User, discordUser, "Количестве предупреждений превышено", muteUntil)
 }
 
 func warnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -722,5 +724,5 @@ func resetWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 		return
 	}
 
-	logs.LogWarningResetting(session, interactionCreate.Member.User, discordUser)
+	go logs.LogWarningResetting(session, interactionCreate.Member.User, discordUser)
 }
