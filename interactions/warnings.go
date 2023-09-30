@@ -525,6 +525,8 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		return
 	}
 
+	// TODO Rewrite warning logic
+
 	warnings, err := db.GetUserWarnings(discordUser.ID)
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
