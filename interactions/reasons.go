@@ -25,12 +25,12 @@ type Reason struct {
 }
 
 func getReasonChoices() []*discordgo.ApplicationCommandOptionChoice {
-	var choices []*discordgo.ApplicationCommandOptionChoice
+	choices := make([]*discordgo.ApplicationCommandOptionChoice, len(Reasons))
 	for i, reason := range Reasons {
-		choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
+		choices[i] = &discordgo.ApplicationCommandOptionChoice{
 			Name:  reason.Name,
 			Value: strconv.Itoa(i),
-		})
+		}
 	}
 	return choices
 }

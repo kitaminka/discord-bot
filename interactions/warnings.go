@@ -96,10 +96,10 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 	}
 }
 func createWarnSelectMenu(userID string) discordgo.SelectMenu {
-	var selectMenuOptions []discordgo.SelectMenuOption
+	selectMenuOptions := make([]discordgo.SelectMenuOption, len(Reasons))
 
 	for i, reason := range Reasons {
-		selectMenuOptions = append(selectMenuOptions, discordgo.SelectMenuOption{
+		selectMenuOptions[i] = discordgo.SelectMenuOption{
 			Label:       reason.Name,
 			Value:       fmt.Sprintf("%v_%v", userID, i),
 			Description: reason.Description,
@@ -107,7 +107,7 @@ func createWarnSelectMenu(userID string) discordgo.SelectMenu {
 				Name: msg.ReportEmoji.Name,
 				ID:   msg.ReportEmoji.ID,
 			},
-		})
+		}
 	}
 
 	return discordgo.SelectMenu{
