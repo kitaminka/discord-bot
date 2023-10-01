@@ -525,23 +525,20 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		return
 	}
 
-	// TODO Rewrite warning logic
-
+	user, err := db.GetUser(discordUser.ID)
+	if err != nil {
+		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
+		return
+	}
 	warnings, err := db.GetUserWarnings(discordUser.ID)
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		log.Printf("Error getting user warnings: %v", err)
 		return
 	}
-	if len(warnings) < MuteWarningsCount {
-		// Not enough warnings
-		return
-	}
-
-	user, err := db.GetUser(discordUser.ID)
-	if err != nil {
-		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
-		log.Printf("Error getting user: %v", err)
+	if len(warnings) < MuteWarningsCount && user.LastMuteTime.Add(time.Duration(int(ExtendedMutePeriod)*user.MuteCount)).Before(time.Now()) {
+		// Not enough warnings and enough time passed since last mute
 		return
 	}
 
@@ -560,6 +557,11 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 	if err != nil {
 		followupErrorMessageCreate(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		log.Printf("Error muting user: %v", err)
+		return
+	}
+	err = db.RemoveUserWarnings(discordUser.ID)
+	if err != nil {
+		log.Printf("Error removing user warnings: %v", err)
 		return
 	}
 	err = db.IncrementUserMuteCount(discordUser.ID)

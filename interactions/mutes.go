@@ -14,9 +14,7 @@ import (
 )
 
 func getUserNextMuteDuration(user db.User) time.Duration {
-	now := time.Now()
-
-	if now.After(user.LastMuteTime.Add(ExtendedMutePeriod + time.Duration(int(MuteDuration)*user.MuteCount))) {
+	if time.Now().After(user.LastMuteTime.Add(ExtendedMutePeriod + time.Duration(int(MuteDuration)*user.MuteCount))) {
 		return MuteDuration
 	}
 
