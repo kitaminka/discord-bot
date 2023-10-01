@@ -7,6 +7,7 @@ import (
 	"github.com/kitaminka/discord-bot/msg"
 	"log"
 	"strconv"
+	"time"
 )
 
 var (
@@ -61,33 +62,66 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		return
 	}
 
+	fields := []*msg.StructuredTextField{
+		{
+			Emoji: msg.UsernameEmoji,
+			Name:  "Пользователь",
+			Value: member.Mention(),
+		},
+		{
+			Emoji: msg.JoinEmoji,
+			Name:  "Присоединился к серверу",
+			Value: fmt.Sprintf("<t:%v:R>", member.JoinedAt.Unix()),
+		},
+		{
+			Emoji: msg.ReputationEmoji,
+			Name:  "Репутация",
+			Value: strconv.Itoa(user.Reputation),
+		},
+		{
+			Emoji: msg.ReportEmoji,
+			Name:  "Отправленные репортов",
+			Value: strconv.Itoa(user.ReportsSentCount),
+		},
+	}
+
+	isModerator, err := isUserModerator(session, interactionCreate.Interaction, interactionCreate.Member.User)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при получении профиля пользователя. Свяжитесь с администрацией.")
+		log.Printf("Error checking if user is moderator: %v", err)
+		return
+	}
+
+	if isModerator {
+		if user.MuteCount > 0 {
+			fields = append(fields, &msg.StructuredTextField{
+				Emoji: msg.TextChannelEmoji,
+				Name:  "Количество предыдущих мутов",
+				Value: strconv.Itoa(user.MuteCount),
+			})
+		}
+		if time.Now().Before(user.LastMuteTime.Add(ExtendedMutePeriod * time.Duration(user.MuteCount))) {
+			fields = append(fields, &msg.StructuredTextField{
+				Emoji: msg.ShieldCheckMarkEmoji,
+				Name:  "Окончание повышенного времени мута",
+				Value: fmt.Sprintf("<t:%v:R>", user.LastMuteTime.Add(ExtendedMutePeriod*time.Duration(user.MuteCount)).Unix()),
+			})
+		}
+		if member.CommunicationDisabledUntil != nil && time.Now().Before(*member.CommunicationDisabledUntil) {
+			fields = append(fields, &msg.StructuredTextField{
+				Emoji: msg.ShieldCheckMarkEmoji,
+				Name:  "Время окончания мута",
+				Value: fmt.Sprintf("<t:%v:R>", member.CommunicationDisabledUntil.Unix()),
+			})
+		}
+	}
+
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
 			{
 				Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji.MessageFormat(), member.User.Username),
 				Description: msg.StructuredText{
-					Fields: []*msg.StructuredTextField{
-						{
-							Emoji: msg.UsernameEmoji,
-							Name:  "Пользователь",
-							Value: member.Mention(),
-						},
-						{
-							Emoji: msg.JoinEmoji,
-							Name:  "Присоединился к серверу",
-							Value: fmt.Sprintf("<t:%v:R>", member.JoinedAt.Unix()),
-						},
-						{
-							Emoji: msg.ReputationEmoji,
-							Name:  "Репутация",
-							Value: strconv.Itoa(user.Reputation),
-						},
-						{
-							Emoji: msg.ReportEmoji,
-							Name:  "Отправленные репортов",
-							Value: strconv.Itoa(user.ReportsSentCount),
-						},
-					},
+					Fields: fields,
 				}.ToString(),
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: member.AvatarURL(""),

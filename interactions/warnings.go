@@ -537,7 +537,8 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		log.Printf("Error getting user warnings: %v", err)
 		return
 	}
-	if len(warnings) < MuteWarningsCount && user.LastMuteTime.Add(time.Duration(int(ExtendedMutePeriod)*user.MuteCount)).Before(time.Now()) {
+
+	if len(warnings) < MuteWarningsCount && time.Now().After(user.LastMuteTime.Add(ExtendedMutePeriod*time.Duration(user.MuteCount))) {
 		// Not enough warnings and enough time passed since last mute
 		return
 	}

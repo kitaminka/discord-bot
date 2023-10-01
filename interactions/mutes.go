@@ -14,11 +14,11 @@ import (
 )
 
 func getUserNextMuteDuration(user db.User) time.Duration {
-	if time.Now().After(user.LastMuteTime.Add(ExtendedMutePeriod + time.Duration(int(MuteDuration)*user.MuteCount))) {
+	if time.Now().After(user.LastMuteTime.Add(ExtendedMutePeriod + MuteDuration*time.Duration(user.MuteCount))) {
 		return MuteDuration
 	}
 
-	return time.Duration((user.MuteCount + 1) * int(MuteDuration))
+	return time.Duration(user.MuteCount+1) * MuteDuration
 }
 
 func muteChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
