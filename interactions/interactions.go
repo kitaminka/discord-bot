@@ -62,26 +62,40 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		return
 	}
 
-	fields := []*msg.StructuredTextField{
+	embeds := []*discordgo.MessageEmbed{
 		{
-			Emoji: msg.UsernameEmoji,
-			Name:  "Пользователь",
-			Value: member.Mention(),
-		},
-		{
-			Emoji: msg.JoinEmoji,
-			Name:  "Присоединился к серверу",
-			Value: fmt.Sprintf("<t:%v:R>", member.JoinedAt.Unix()),
-		},
-		{
-			Emoji: msg.ReputationEmoji,
-			Name:  "Репутация",
-			Value: strconv.Itoa(user.Reputation),
-		},
-		{
-			Emoji: msg.ReportEmoji,
-			Name:  "Отправленные репортов",
-			Value: strconv.Itoa(user.ReportsSentCount),
+			Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji.MessageFormat(), member.User.Username),
+			Description: msg.StructuredText{
+				Fields: []*msg.StructuredTextField{
+					{
+						Emoji: msg.UsernameEmoji,
+						Name:  "Пользователь",
+						Value: member.Mention(),
+					},
+					{
+						Emoji: msg.JoinEmoji,
+						Name:  "Присоединился к серверу",
+						Value: fmt.Sprintf("<t:%v:R>", member.JoinedAt.Unix()),
+					},
+					{
+						Emoji: msg.ReputationEmoji,
+						Name:  "Репутация",
+						Value: strconv.Itoa(user.Reputation),
+					},
+					{
+						Emoji: msg.ReportEmoji,
+						Name:  "Отправленные репортов",
+						Value: strconv.Itoa(user.ReportsSentCount),
+					},
+				},
+			}.ToString(),
+			Thumbnail: &discordgo.MessageEmbedThumbnail{
+				URL: member.AvatarURL(""),
+			},
+			Footer: &discordgo.MessageEmbedFooter{
+				Text: fmt.Sprintf("ID: %v", member.User.ID),
+			},
+			Color: msg.DefaultEmbedColor,
 		},
 	}
 
@@ -93,45 +107,42 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 	}
 
 	if isModerator {
+		var description msg.StructuredText
+
 		if user.MuteCount > 0 {
-			fields = append(fields, &msg.StructuredTextField{
+			description.Fields = append(description.Fields, &msg.StructuredTextField{
 				Emoji: msg.TextChannelEmoji,
 				Name:  "Количество предыдущих мутов",
 				Value: strconv.Itoa(user.MuteCount),
 			})
 		}
 		if time.Now().Before(user.LastMuteTime.Add(ExtendedMutePeriod * time.Duration(user.MuteCount))) {
-			fields = append(fields, &msg.StructuredTextField{
+			description.Fields = append(description.Fields, &msg.StructuredTextField{
 				Emoji: msg.ShieldCheckMarkEmoji,
 				Name:  "Окончание повышенного времени мута",
-				Value: fmt.Sprintf("<t:%v:R>", user.LastMuteTime.Add(ExtendedMutePeriod*time.Duration(user.MuteCount)).Unix()),
+				Value: fmt.Sprintf("<t:%v:R>", user.LastMuteTime.Add((ExtendedMutePeriod+MuteDuration)*time.Duration(user.MuteCount)).Unix()),
 			})
 		}
 		if member.CommunicationDisabledUntil != nil && time.Now().Before(*member.CommunicationDisabledUntil) {
-			fields = append(fields, &msg.StructuredTextField{
+			description.Fields = append(description.Fields, &msg.StructuredTextField{
 				Emoji: msg.ShieldCheckMarkEmoji,
 				Name:  "Время окончания мута",
 				Value: fmt.Sprintf("<t:%v:R>", member.CommunicationDisabledUntil.Unix()),
 			})
 		}
+		if len(description.Fields) == 0 {
+			description.Text = "Нет информации."
+		}
+
+		embeds = append(embeds, &discordgo.MessageEmbed{
+			Title:       "Модераторская информация",
+			Description: description.ToString(),
+			Color:       msg.DefaultEmbedColor,
+		})
 	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-		Embeds: &[]*discordgo.MessageEmbed{
-			{
-				Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji.MessageFormat(), member.User.Username),
-				Description: msg.StructuredText{
-					Fields: fields,
-				}.ToString(),
-				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL: member.AvatarURL(""),
-				},
-				Footer: &discordgo.MessageEmbedFooter{
-					Text: fmt.Sprintf("ID: %v", member.User.ID),
-				},
-				Color: msg.DefaultEmbedColor,
-			},
-		},
+		Embeds: &embeds,
 	})
 	if err != nil {
 		log.Printf("Error editing interaction response: %v", err)
