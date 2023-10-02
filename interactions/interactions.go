@@ -62,6 +62,8 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		return
 	}
 
+	var components []discordgo.MessageComponent
+
 	embeds := []*discordgo.MessageEmbed{
 		{
 			Title: fmt.Sprintf("%v Профиль пользователя %v", msg.UserEmoji.MessageFormat(), member.User.Username),
@@ -134,6 +136,15 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 			description.Text = "Нет информации."
 		}
 
+		components = []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					ViewWarningsButton,
+					RemoveWarningsButton,
+				},
+			},
+		}
+
 		embeds = append(embeds, &discordgo.MessageEmbed{
 			Title:       "Модераторская информация",
 			Description: description.ToString(),
@@ -142,7 +153,8 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
-		Embeds: &embeds,
+		Embeds:     &embeds,
+		Components: &components,
 	})
 	if err != nil {
 		log.Printf("Error editing interaction response: %v", err)
