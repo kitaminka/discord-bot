@@ -111,14 +111,14 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 	if isModerator {
 		var description msg.StructuredText
 
-		if user.MuteCount > 0 && time.Now().Before(user.LastMuteTime.Add(ExtendedMutePeriod*time.Duration(user.MuteCount))) {
+		if user.MuteCount > 0 && time.Now().Before(user.LastMuteTime.Add((ExtendedMutePeriod+MuteDuration)*time.Duration(user.MuteCount))) {
 			description.Fields = append(description.Fields, &msg.StructuredTextField{
 				Emoji: msg.TextChannelEmoji,
 				Name:  "Количество предыдущих мутов",
 				Value: strconv.Itoa(user.MuteCount),
 			})
 		}
-		if time.Now().Before(user.LastMuteTime.Add(ExtendedMutePeriod * time.Duration(user.MuteCount))) {
+		if time.Now().Before(user.LastMuteTime.Add((ExtendedMutePeriod + MuteDuration) * time.Duration(user.MuteCount))) {
 			description.Fields = append(description.Fields, &msg.StructuredTextField{
 				Emoji: msg.ShieldCheckMarkEmoji,
 				Name:  "Окончание повышенного времени мута",
