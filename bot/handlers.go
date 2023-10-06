@@ -18,6 +18,7 @@ var Handlers = []interface{}{
 			}
 			handler(session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
+			// TODO Update component handler
 			handler, exists := interactions.ComponentHandlers[interactionCreate.MessageComponentData().CustomID]
 			if !exists {
 				interactions.InteractionRespondError(session, interactionCreate.Interaction, "Команда не найдена. Свяжитесь с администрацией.")

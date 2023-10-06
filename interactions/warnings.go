@@ -617,6 +617,9 @@ func warnsChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 		}
 	}
 
+	viewWarns(session, interactionCreate, discordUser)
+}
+func viewWarns(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User) {
 	if discordUser.Bot {
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете посмотреть предупреждения бота.")
 		return
