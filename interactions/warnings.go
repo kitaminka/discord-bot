@@ -598,8 +598,8 @@ func muteUserForWarnings(session *discordgo.Session, interactionCreate *discordg
 		return
 	}
 
-	go notifyUserMute(session, discordUser.ID, muteUntil, true, "Количестве предупреждений превышено")
-	go logs.LogUserMute(session, interactionCreate.Member.User, discordUser, "Количестве предупреждений превышено", muteUntil)
+	go notifyUserMute(session, discordUser.ID, muteUntil, true, "Количество предупреждений превышено")
+	go logs.LogUserMute(session, interactionCreate.Member.User, discordUser, "Количество предупреждений превышено", muteUntil)
 }
 
 func warnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {

@@ -86,7 +86,7 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 					},
 					{
 						Emoji: msg.ReportEmoji,
-						Name:  "Отправленные репортов",
+						Name:  "Отправлено репортов",
 						Value: strconv.Itoa(user.ReportsSentCount),
 					},
 				},
@@ -111,7 +111,7 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 	if isModerator {
 		var description msg.StructuredText
 
-		if user.MuteCount > 0 {
+		if user.MuteCount > 0 && time.Now().Before(user.LastMuteTime.Add(ExtendedMutePeriod*time.Duration(user.MuteCount))) {
 			description.Fields = append(description.Fields, &msg.StructuredTextField{
 				Emoji: msg.TextChannelEmoji,
 				Name:  "Количество предыдущих мутов",
