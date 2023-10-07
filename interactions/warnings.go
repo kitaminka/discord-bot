@@ -210,6 +210,10 @@ func remWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *d
 		}
 	}
 
+	removeWarningsSelectMenu(session, interactionCreate, discordUser)
+}
+
+func removeWarningsSelectMenu(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User) {
 	if discordUser.Bot {
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете снять предупреждение с бота.")
 		return
@@ -618,6 +622,26 @@ func warnsChatCommandHandler(session *discordgo.Session, interactionCreate *disc
 	}
 
 	viewWarns(session, interactionCreate, discordUser)
+}
+func viewWarningsButtonHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	userID := strings.Split(interactionCreate.MessageComponentData().CustomID, ":")[1]
+	discordUser, err := session.User(userID)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при получении предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
+		return
+	}
+	viewWarns(session, interactionCreate, discordUser)
+}
+func removeWarningsButtonHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	userID := strings.Split(interactionCreate.MessageComponentData().CustomID, ":")[1]
+	discordUser, err := session.User(userID)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при получении предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error getting user: %v", err)
+		return
+	}
+	removeWarningsSelectMenu(session, interactionCreate, discordUser)
 }
 func viewWarns(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate, discordUser *discordgo.User) {
 	if discordUser.Bot {

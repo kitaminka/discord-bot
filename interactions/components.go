@@ -1,6 +1,7 @@
 package interactions
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/msg"
 )
@@ -14,21 +15,25 @@ var (
 		Style:    discordgo.SecondaryButton,
 		Emoji:    msg.ToComponentEmoji(msg.CheckMarkEmoji),
 	}
-	ViewWarningsButton = &discordgo.Button{
-		CustomID: "view_warnings",
-		Label:    "Предупреждения",
-		Style:    discordgo.PrimaryButton,
+	ViewWarningsButton = func(userID string) *discordgo.Button {
+		return &discordgo.Button{
+			CustomID: fmt.Sprintf("view_warnings:%v", userID),
+			Label:    "Предупреждения",
+			Style:    discordgo.PrimaryButton,
+		}
 	}
-	RemoveWarningsButton = &discordgo.Button{
-		CustomID: "remove_warnings",
-		Label:    "Снять предупреждения",
-		Style:    discordgo.DangerButton,
+	RemoveWarningsButton = func(userID string) *discordgo.Button {
+		return &discordgo.Button{
+			CustomID: fmt.Sprintf("remove_warnings:%v", userID),
+			Label:    "Снять предупреждения",
+			Style:    discordgo.DangerButton,
+		}
 	}
 	ComponentHandlers = map[string]ComponentHandler{
 		"resolve_report":  resolveReportHandler,
 		"create_warning":  createWarningHandler,
 		"remove_warning":  removeWarningHandler,
-		"view_warnings":   warnsChatCommandHandler,
-		"remove_warnings": remWarnsChatCommandHandler,
+		"view_warnings":   viewWarningsButtonHandler,
+		"remove_warnings": removeWarningsButtonHandler,
 	}
 )

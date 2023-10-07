@@ -139,8 +139,8 @@ func profileCommandHandler(session *discordgo.Session, interactionCreate *discor
 		components = []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					ViewWarningsButton,
-					RemoveWarningsButton,
+					ViewWarningsButton(member.User.ID),
+					RemoveWarningsButton(member.User.ID),
 				},
 			},
 		}

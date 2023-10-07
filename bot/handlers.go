@@ -5,6 +5,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/interactions"
+	"strings"
 )
 
 var Handlers = []interface{}{
@@ -18,8 +19,8 @@ var Handlers = []interface{}{
 			}
 			handler(session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
-			// TODO Update component handler
-			handler, exists := interactions.ComponentHandlers[interactionCreate.MessageComponentData().CustomID]
+			customID := strings.Split(interactionCreate.MessageComponentData().CustomID, ":")[0]
+			handler, exists := interactions.ComponentHandlers[customID]
 			if !exists {
 				interactions.InteractionRespondError(session, interactionCreate.Interaction, "Команда не найдена. Свяжитесь с администрацией.")
 				return
