@@ -19,6 +19,7 @@ var Handlers = []interface{}{
 			}
 			handler(session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
+			// Component name format: <name>:<someID>:<someID>:<someID>
 			customID := strings.Split(interactionCreate.MessageComponentData().CustomID, ":")[0]
 			handler, exists := interactions.ComponentHandlers[customID]
 			if !exists {

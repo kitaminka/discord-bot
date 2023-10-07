@@ -101,7 +101,7 @@ func createWarnSelectMenu(userID string) discordgo.SelectMenu {
 	for i, reason := range Reasons {
 		selectMenuOptions[i] = discordgo.SelectMenuOption{
 			Label:       reason.Name,
-			Value:       fmt.Sprintf("%v_%v", userID, i),
+			Value:       fmt.Sprintf("%v:%v", userID, i),
 			Description: "Нажмите, чтобы выдать предупреждение.",
 			Emoji: discordgo.ComponentEmoji{
 				Name: msg.ReportEmoji.Name,
@@ -285,7 +285,7 @@ func createWarningHandler(session *discordgo.Session, interactionCreate *discord
 		return
 	}
 
-	values := strings.Split(interactionCreate.MessageComponentData().Values[0], "_")
+	values := strings.Split(interactionCreate.MessageComponentData().Values[0], ":")
 
 	userID := values[0]
 	reasonString := values[1]
@@ -298,7 +298,6 @@ func createWarningHandler(session *discordgo.Session, interactionCreate *discord
 	}
 
 	createWarning(session, interactionCreate, discordUser, reasonString)
-
 }
 func removeWarningHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
@@ -758,4 +757,13 @@ func resetWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 
 	go notifyUserWarningReset(session, discordUser.ID)
 	go logs.LogWarningResetting(session, interactionCreate.Member.User, discordUser)
+}
+
+func reportWarningButtonHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав для этого.")
+		return
+	}
+
+	// ...
 }

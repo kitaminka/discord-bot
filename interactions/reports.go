@@ -79,7 +79,8 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
-					ResolveReportButton,
+					ResolveReportButton(interactionCreate.Member.User.ID, reportedMessage.Author.ID, interactionCreate.ChannelID, reportedMessage.ID),
+					//ReportWarningButton(interactionCreate.Member.User.ID, reportedMessage.Author.ID, interactionCreate.ChannelID, reportedMessage.ID),
 				},
 			},
 		},
