@@ -102,7 +102,7 @@ func createWarnSelectMenu(userID string) discordgo.SelectMenu {
 		selectMenuOptions[i] = discordgo.SelectMenuOption{
 			Label:       reason.Name,
 			Value:       fmt.Sprintf("%v_%v", userID, i),
-			Description: reason.Description,
+			Description: "Нажмите, чтобы выдать предупреждение.",
 			Emoji: discordgo.ComponentEmoji{
 				Name: msg.ReportEmoji.Name,
 				ID:   msg.ReportEmoji.ID,

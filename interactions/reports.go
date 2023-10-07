@@ -14,11 +14,14 @@ func reportMessageCommandHandler(session *discordgo.Session, interactionCreate *
 	reportedMessageUrl := fmt.Sprintf("https://discord.com/channels/%v/%v/%v", interactionCreate.GuildID, interactionCreate.ChannelID, reportedMessage.ID)
 	reportedMessageSenderMention := msg.UserMention(reportedMessage.Author)
 
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers != 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можеет отправлять репорты.")
+		return
+	}
 	if interactionCreate.Member.User.ID == reportedMessage.Author.ID {
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на своё сообщение.")
 		return
 	}
-
 	if reportedMessage.Author.Bot {
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете отправить репорт на сообщение бота.")
 		return
