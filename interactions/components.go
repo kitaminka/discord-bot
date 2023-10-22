@@ -21,7 +21,7 @@ var (
 		return &discordgo.Button{
 			CustomID: fmt.Sprintf("report_warning:%v:%v:%v:%v", senderID, userID, channelID, messageID),
 			Label:    "Выдать предупреждение",
-			Style:    discordgo.DangerButton,
+			Style:    discordgo.SecondaryButton,
 			Emoji:    msg.ToComponentEmoji(msg.ShieldCheckMarkEmoji),
 		}
 	}
