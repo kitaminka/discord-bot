@@ -18,7 +18,7 @@ func ConnectMongo(mongoUri, mongoDatabaseName string) {
 		log.Panicf("Error connecting to MongoDB: %v", err)
 	}
 
-	log.Print("Successfully connected to MongoDB")
+	log.Print("Connected to MongoDB")
 
 	MongoClient = mongoClient
 	MongoDatabase = MongoClient.Database(mongoDatabaseName)

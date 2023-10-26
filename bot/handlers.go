@@ -5,15 +5,30 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/interactions"
+	"strings"
 )
 
 var Handlers = []interface{}{
 	func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 		switch interactionCreate.Type {
 		case discordgo.InteractionApplicationCommand:
-			interactions.Commands[interactionCreate.ApplicationCommandData().Name].Handler(session, interactionCreate)
+			handler, exists := interactions.CommandHandlers[interactionCreate.ApplicationCommandData().Name]
+			if !exists {
+				interactions.InteractionRespondError(session, interactionCreate.Interaction, "Команда не найдена. Свяжитесь с администрацией.")
+				return
+			}
+			handler(session, interactionCreate)
 		case discordgo.InteractionMessageComponent:
-			interactions.ComponentHandlers[interactionCreate.MessageComponentData().CustomID](session, interactionCreate)
+			// Component name format: <name>:<someID>:<someID>:<someID>
+			customID := strings.Split(interactionCreate.MessageComponentData().CustomID, ":")[0]
+			handler, exists := interactions.ComponentHandlers[customID]
+			if !exists {
+				interactions.InteractionRespondError(session, interactionCreate.Interaction, "Команда не найдена. Свяжитесь с администрацией.")
+				return
+			}
+			handler(session, interactionCreate)
+		case discordgo.InteractionApplicationCommandAutocomplete:
+			interactions.AutocompleteHandlers[interactionCreate.ApplicationCommandData().Name](session, interactionCreate)
 		}
 	},
 	func(session *discordgo.Session, guildMemberRemove *discordgo.GuildMemberRemove) {

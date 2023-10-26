@@ -15,6 +15,7 @@ const (
 
 func StartBot(token, mongoUri, mongoDatabaseName string) {
 	db.ConnectMongo(mongoUri, mongoDatabaseName)
+
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.Panicf("Error creating Discord session: %v", err)
@@ -30,7 +31,7 @@ func StartBot(token, mongoUri, mongoDatabaseName string) {
 
 	interactions.CreateApplicationCommands(session)
 
-	log.Println("Bot is now running. Press CTRL-C to exit.")
+	log.Print("Bot is now running. Press CTRL-C to exit.")
 
 	defer session.Close()
 
