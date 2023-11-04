@@ -58,6 +58,11 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
 		return
 	}
+	err = session.ChannelMessageDelete(interactionCreate.ChannelID, message.ID)
+	if err != nil {
+		log.Printf("Error deleting message: %v", err)
+		return
+	}
 	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
