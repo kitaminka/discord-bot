@@ -60,13 +60,18 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	}
 
 	durationString = strings.ReplaceAll(durationString, " ", "")
-	duration, err := time.ParseDuration(durationString)
+	duration, err := msg.ParseDuration(durationString)
 	if err != nil {
 		InteractionRespondError(session, interactionCreate.Interaction, "Неверный формат длительности.")
 		return
 	}
 	if duration < 0 {
 		InteractionRespondError(session, interactionCreate.Interaction, "Длительность мута не может быть отрицательной.")
+		return
+	}
+
+	if duration > time.Hour*24*28 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Максимальная длительность мута 28 дней.")
 		return
 	}
 
