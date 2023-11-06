@@ -51,6 +51,10 @@ func GetUserWarnings(userID string) ([]Warning, error) {
 	err = cursor.All(context.Background(), &warnings)
 	return warnings, err
 }
+func RemoveExpiredWarnings() (int64, error) {
+	deleteResult, err := MongoDatabase.Collection(WarningCollectionName).DeleteMany(context.Background(), bson.D{{"time", bson.D{{"$lt", time.Now().Add(-WarningDuration)}}}})
+	return deleteResult.DeletedCount, err
+}
 func RemoveExpiredUserWarnings(userID string) error {
 	_, err := MongoDatabase.Collection(WarningCollectionName).DeleteMany(context.Background(), bson.D{{"userId", userID}, {"time", bson.D{{"$lt", time.Now().Add(-WarningDuration)}}}})
 	return err

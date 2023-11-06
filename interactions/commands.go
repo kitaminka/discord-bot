@@ -89,6 +89,13 @@ var (
 			DMPermission: new(bool),
 		},
 		{
+			Type:                     discordgo.ChatApplicationCommand,
+			Name:                     "clear-warns",
+			Description:              "Очистить истекшие предупреждения",
+			DMPermission:             new(bool),
+			DefaultMemberPermissions: &AdministratorPermission,
+		},
+		{
 			Type:        discordgo.ChatApplicationCommand,
 			Name:        "top",
 			Description: "Просмотреть топ пользователей",
@@ -262,11 +269,12 @@ var (
 		"warn":             warnChatCommandHandler,
 		"remwarns":         remWarnsChatCommandHandler,
 		"Выдать предупреждение": warnMessageCommandHandler,
-		"mute":       muteChatCommandHandler,
-		"warns":      warnsChatCommandHandler,
-		"resetwarns": resetWarnsChatCommandHandler,
-		"unmute":     unmuteChatCommandHandler,
-		"info":       infoChatCommandHandler,
+		"mute":        muteChatCommandHandler,
+		"warns":       warnsChatCommandHandler,
+		"resetwarns":  resetWarnsChatCommandHandler,
+		"unmute":      unmuteChatCommandHandler,
+		"info":        infoChatCommandHandler,
+		"clear-warns": clearWarnsChatCommandHandler,
 	}
 )
 

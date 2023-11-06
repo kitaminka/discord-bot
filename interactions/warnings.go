@@ -772,3 +772,49 @@ func reportWarningButtonHandler(session *discordgo.Session, interactionCreate *d
 
 	// ...
 }
+
+func clearWarnsChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionAdministrator == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		log.Printf("Error responding to interaction: %v", err)
+		return
+	}
+
+	deletedCount, err := db.RemoveExpiredWarnings()
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при удалении предупреждений. Свяжитесь с администрацией.")
+		log.Printf("Error removing expired warnings: %v", err)
+		return
+	}
+
+	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
+		Embeds: &[]*discordgo.MessageEmbed{
+			{
+				Title: "Истекшие предупреждения удалены",
+				Description: msg.StructuredText{
+					Fields: []*msg.StructuredTextField{
+						{
+							Name:  "Количество удаленных предупрждений",
+							Value: strconv.Itoa(int(deletedCount)),
+						},
+					},
+				}.ToString(),
+				Color: msg.DefaultEmbedColor,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("Error editing interaction response: %v", err)
+		return
+	}
+}
