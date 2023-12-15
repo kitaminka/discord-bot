@@ -18,7 +18,7 @@ var (
 		GuildApplicationCommand,
 		{
 			Type:        discordgo.ChatApplicationCommand,
-			Name:        "resetdelay",
+			Name:        "reset-delay",
 			Description: "Сбросить задержку для лайков и дизлайков",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
@@ -110,7 +110,7 @@ var (
 		},
 		{
 			Type:        discordgo.ChatApplicationCommand,
-			Name:        "setreputation",
+			Name:        "set-reputation",
 			Description: "Установить репутацию пользователю",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
@@ -161,7 +161,7 @@ var (
 		},
 		{
 			Type:        discordgo.ChatApplicationCommand,
-			Name:        "remwarns",
+			Name:        "rem-warns",
 			Description: "Снять предупреждения пользователя",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
@@ -219,7 +219,7 @@ var (
 		},
 		{
 			Type:        discordgo.ChatApplicationCommand,
-			Name:        "resetwarns",
+			Name:        "reset-warns",
 			Description: "Сбросить предупреждения пользователя",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
@@ -257,7 +257,7 @@ var (
 	CommandHandlers = map[string]CommandHandler{
 		"Отправить репорт": reportMessageCommandHandler,
 		"guild":            guildChatCommandHandler,
-		"resetdelay":       resetDelayChatCommandHandler,
+		"reset-delay":      resetDelayChatCommandHandler,
 		"Профиль":          profileCommandHandler,
 		"profile":          profileCommandHandler,
 		"Лайк":             likeUserCommandHandler,
@@ -265,13 +265,13 @@ var (
 		"like":             likeChatCommandHandler,
 		"dislike":          dislikeChatCommandHandler,
 		"top":              topChatCommandHandler,
-		"setreputation":    setReputationChatCommandHandler,
+		"set-reputation":   setReputationChatCommandHandler,
 		"warn":             warnChatCommandHandler,
-		"remwarns":         remWarnsChatCommandHandler,
+		"rem-warns":        remWarnsChatCommandHandler,
 		"Выдать предупреждение": warnMessageCommandHandler,
 		"mute":        muteChatCommandHandler,
 		"warns":       warnsChatCommandHandler,
-		"resetwarns":  resetWarnsChatCommandHandler,
+		"reset-warns": resetWarnsChatCommandHandler,
 		"unmute":      unmuteChatCommandHandler,
 		"info":        infoChatCommandHandler,
 		"clear-warns": clearWarnsChatCommandHandler,
