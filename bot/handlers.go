@@ -27,8 +27,6 @@ var Handlers = []interface{}{
 				return
 			}
 			handler(session, interactionCreate)
-		case discordgo.InteractionApplicationCommandAutocomplete:
-			interactions.AutocompleteHandlers[interactionCreate.ApplicationCommandData().Name](session, interactionCreate)
 		}
 	},
 	func(session *discordgo.Session, guildMemberRemove *discordgo.GuildMemberRemove) {
