@@ -2,12 +2,13 @@ package interactions
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
-	"github.com/kitaminka/discord-bot/msg"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/msg"
 )
 
 var (
