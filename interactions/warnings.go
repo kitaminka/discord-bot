@@ -785,7 +785,7 @@ func clearWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 		return
 	}
 
-	deletedCount, err := db.RemoveExpiredWarnings()
+	deletedCount, err := db.DeleteExpiredWarnings()
 	if err != nil {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при удалении предупреждений. Свяжитесь с администрацией.")
 		log.Printf("Error removing expired warnings: %v", err)
@@ -799,7 +799,7 @@ func clearWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 				Description: msg.StructuredText{
 					Fields: []*msg.StructuredTextField{
 						{
-							Name:  "Количество удаленных предупрждений",
+							Name:  "Количество удаленных предупреждений",
 							Value: strconv.Itoa(int(deletedCount)),
 						},
 					},
@@ -811,5 +811,11 @@ func clearWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 	if err != nil {
 		log.Printf("Error editing interaction response: %v", err)
 		return
+	}
+}
+
+func IntervalDeleteExpiredWarnings() {
+	for range time.Tick(ExpiredWarningDeletionInterval) {
+		db.DeleteExpiredWarnings()
 	}
 }

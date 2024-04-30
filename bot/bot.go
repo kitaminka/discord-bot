@@ -1,12 +1,13 @@
 package bot
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
-	"github.com/kitaminka/discord-bot/interactions"
 	"log"
 	"os"
 	"os/signal"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/interactions"
 )
 
 const (
@@ -22,6 +23,7 @@ func StartBot(token, mongoUri, mongoDatabaseName string) {
 	}
 
 	AddHandlers(session)
+	go interactions.IntervalDeleteExpiredWarnings()
 	session.Identify.Intents = Intents
 
 	err = session.Open()

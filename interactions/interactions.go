@@ -14,6 +14,8 @@ import (
 var (
 	AdministratorPermission = int64(discordgo.PermissionAdministrator)
 	ModeratorPermission     = int64(discordgo.PermissionModerateMembers)
+
+	ExpiredWarningDeletionInterval = time.Hour * 12
 )
 
 // Used for user command and chat command
