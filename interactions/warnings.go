@@ -2,16 +2,17 @@ package interactions
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
-	"github.com/kitaminka/discord-bot/logs"
-	"github.com/kitaminka/discord-bot/msg"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/logs"
+	"github.com/kitaminka/discord-bot/msg"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func warnChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -108,10 +109,7 @@ func createWarnSelectMenu(userID string) discordgo.SelectMenu {
 			Label:       reason.Name,
 			Value:       fmt.Sprintf("%v:%v", userID, i),
 			Description: "Нажмите, чтобы выдать предупреждение.",
-			Emoji: discordgo.ComponentEmoji{
-				Name: msg.ReportEmoji.Name,
-				ID:   msg.ReportEmoji.ID,
-			},
+			Emoji:       msg.ToComponentEmoji(msg.ReportEmoji),
 		}
 	}
 
@@ -140,10 +138,7 @@ func createWarningSelectMenu(session *discordgo.Session, warnings []db.Warning) 
 			Label:       fmt.Sprintf("Предупреждение #%v от %v", i+1, moderatorDiscordUser.Username),
 			Value:       warning.ID.Hex(),
 			Description: warning.Reason,
-			Emoji: discordgo.ComponentEmoji{
-				Name: msg.ReportEmoji.Name,
-				ID:   msg.ReportEmoji.ID,
-			},
+			Emoji:       msg.ToComponentEmoji(msg.ReportEmoji),
 		}
 	}
 

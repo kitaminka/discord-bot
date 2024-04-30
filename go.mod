@@ -3,7 +3,7 @@ module github.com/kitaminka/discord-bot
 go 1.19
 
 require (
-	github.com/bwmarrin/discordgo v0.27.1 // indirect
+	github.com/bwmarrin/discordgo v0.28.1 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
