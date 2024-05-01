@@ -37,6 +37,36 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 
 	createWarning(session, interactionCreate, discordUser, reasonString)
 }
+func offtopWarnMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	message := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
+
+	if message.Author.Bot {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
+		return
+	}
+	isModerator, err := isUserModerator(session, interactionCreate.Interaction, message.Author)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error checking if user is moderator: %v", err)
+		return
+	}
+	if isModerator {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
+		return
+	}
+	err = session.ChannelMessageDelete(interactionCreate.ChannelID, message.ID)
+	if err != nil {
+		log.Printf("Error deleting message: %v", err)
+		return
+	}
+
+	createWarning(session, interactionCreate, message.Author, "0")
+}
 func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
 		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
@@ -89,7 +119,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 			Components: []discordgo.MessageComponent{
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
-						createWarnSelectMenu(message.Author.ID),
+						createWarnReasonSelectMenu(message.Author.ID),
 					},
 				},
 			},
@@ -101,7 +131,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 		return
 	}
 }
-func createWarnSelectMenu(userID string) discordgo.SelectMenu {
+func createWarnReasonSelectMenu(userID string) discordgo.SelectMenu {
 	selectMenuOptions := make([]discordgo.SelectMenuOption, len(Reasons))
 
 	for i, reason := range Reasons {

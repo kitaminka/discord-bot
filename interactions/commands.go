@@ -1,9 +1,10 @@
 package interactions
 
 import (
+	"log"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
-	"log"
 )
 
 type CommandHandler func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
@@ -155,6 +156,12 @@ var (
 		},
 		{
 			Type:                     discordgo.MessageApplicationCommand,
+			Name:                     "Предупреждение за оффтоп",
+			DMPermission:             new(bool),
+			DefaultMemberPermissions: &ModeratorPermission,
+		},
+		{
+			Type:                     discordgo.MessageApplicationCommand,
 			Name:                     "Выдать предупреждение",
 			DMPermission:             new(bool),
 			DefaultMemberPermissions: &ModeratorPermission,
@@ -268,7 +275,8 @@ var (
 		"set-reputation":   setReputationChatCommandHandler,
 		"warn":             warnChatCommandHandler,
 		"rem-warns":        remWarnsChatCommandHandler,
-		"Выдать предупреждение": warnMessageCommandHandler,
+		"Предупреждение за оффтоп": offtopWarnMessageCommandHandler,
+		"Выдать предупреждение":    warnMessageCommandHandler,
 		"mute":        muteChatCommandHandler,
 		"warns":       warnsChatCommandHandler,
 		"reset-warns": resetWarnsChatCommandHandler,

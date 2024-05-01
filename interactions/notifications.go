@@ -2,11 +2,12 @@ package interactions
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
-	"log"
-	"time"
 )
 
 func notifyUserWarning(session *discordgo.Session, userID string, warningTime time.Time, created bool, description string) {

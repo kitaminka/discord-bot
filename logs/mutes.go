@@ -2,9 +2,10 @@ package logs
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/msg"
-	"time"
 )
 
 func LogUserMute(session *discordgo.Session, moderatorUser, targetUser *discordgo.User, reason string, muteUntil time.Time) {

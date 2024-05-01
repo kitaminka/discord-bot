@@ -1,9 +1,10 @@
 package logs
 
 import (
+	"log"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
-	"log"
 )
 
 type logType int
