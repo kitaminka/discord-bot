@@ -2,13 +2,14 @@ package interactions
 
 import (
 	"fmt"
+	"log"
+	"strconv"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/logs"
 	"github.com/kitaminka/discord-bot/msg"
-	"log"
-	"strconv"
-	"time"
 )
 
 func likeUserCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {

@@ -73,8 +73,8 @@ var (
 	}
 )
 
-func ToComponentEmoji(emoji discordgo.Emoji) discordgo.ComponentEmoji {
-	return discordgo.ComponentEmoji{
+func ToComponentEmoji(emoji discordgo.Emoji) *discordgo.ComponentEmoji {
+	return &discordgo.ComponentEmoji{
 		Name: emoji.Name,
 		ID:   emoji.ID,
 	}

@@ -2,6 +2,7 @@ package logs
 
 import (
 	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/msg"
 )

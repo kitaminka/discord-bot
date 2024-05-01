@@ -2,15 +2,16 @@ package interactions
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
-	"github.com/kitaminka/discord-bot/logs"
-	"github.com/kitaminka/discord-bot/msg"
 	"log"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/logs"
+	"github.com/kitaminka/discord-bot/msg"
 )
 
 func getUserNextMuteDuration(user db.User) time.Duration {

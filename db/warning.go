@@ -2,9 +2,10 @@ package db
 
 import (
 	"context"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 const (
@@ -39,7 +40,7 @@ func GetWarning(warnID uint64) (Warning, error) {
 	return warn, err
 }
 func GetUserWarnings(userID string) ([]Warning, error) {
-	err := RemoveExpiredUserWarnings(userID)
+	err := DeleteExpiredUserWarnings(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +52,11 @@ func GetUserWarnings(userID string) ([]Warning, error) {
 	err = cursor.All(context.Background(), &warnings)
 	return warnings, err
 }
-func RemoveExpiredWarnings() (int64, error) {
+func DeleteExpiredWarnings() (int64, error) {
 	deleteResult, err := MongoDatabase.Collection(WarningCollectionName).DeleteMany(context.Background(), bson.D{{"time", bson.D{{"$lt", time.Now().Add(-WarningDuration)}}}})
 	return deleteResult.DeletedCount, err
 }
-func RemoveExpiredUserWarnings(userID string) error {
+func DeleteExpiredUserWarnings(userID string) error {
 	_, err := MongoDatabase.Collection(WarningCollectionName).DeleteMany(context.Background(), bson.D{{"userId", userID}, {"time", bson.D{{"$lt", time.Now().Add(-WarningDuration)}}}})
 	return err
 }

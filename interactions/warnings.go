@@ -2,16 +2,17 @@ package interactions
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/kitaminka/discord-bot/db"
-	"github.com/kitaminka/discord-bot/logs"
-	"github.com/kitaminka/discord-bot/msg"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/kitaminka/discord-bot/db"
+	"github.com/kitaminka/discord-bot/logs"
+	"github.com/kitaminka/discord-bot/msg"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func warnChatCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
@@ -35,6 +36,36 @@ func warnChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	}
 
 	createWarning(session, interactionCreate, discordUser, reasonString)
+}
+func offtopWarnMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+
+	message := interactionCreate.ApplicationCommandData().Resolved.Messages[interactionCreate.ApplicationCommandData().TargetID]
+
+	if message.Author.Bot {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
+		return
+	}
+	isModerator, err := isUserModerator(session, interactionCreate.Interaction, message.Author)
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
+		log.Printf("Error checking if user is moderator: %v", err)
+		return
+	}
+	if isModerator {
+		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
+		return
+	}
+	err = session.ChannelMessageDelete(interactionCreate.ChannelID, message.ID)
+	if err != nil {
+		log.Printf("Error deleting message: %v", err)
+		return
+	}
+
+	createWarning(session, interactionCreate, message.Author, "0")
 }
 func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
 	if interactionCreate.Member.Permissions&discordgo.PermissionModerateMembers == 0 {
@@ -88,7 +119,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 			Components: []discordgo.MessageComponent{
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
-						createWarnSelectMenu(message.Author.ID),
+						createWarnReasonSelectMenu(message.Author.ID),
 					},
 				},
 			},
@@ -100,7 +131,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 		return
 	}
 }
-func createWarnSelectMenu(userID string) discordgo.SelectMenu {
+func createWarnReasonSelectMenu(userID string) discordgo.SelectMenu {
 	selectMenuOptions := make([]discordgo.SelectMenuOption, len(Reasons))
 
 	for i, reason := range Reasons {
@@ -108,10 +139,7 @@ func createWarnSelectMenu(userID string) discordgo.SelectMenu {
 			Label:       reason.Name,
 			Value:       fmt.Sprintf("%v:%v", userID, i),
 			Description: "Нажмите, чтобы выдать предупреждение.",
-			Emoji: discordgo.ComponentEmoji{
-				Name: msg.ReportEmoji.Name,
-				ID:   msg.ReportEmoji.ID,
-			},
+			Emoji:       msg.ToComponentEmoji(msg.ReportEmoji),
 		}
 	}
 
@@ -140,10 +168,7 @@ func createWarningSelectMenu(session *discordgo.Session, warnings []db.Warning) 
 			Label:       fmt.Sprintf("Предупреждение #%v от %v", i+1, moderatorDiscordUser.Username),
 			Value:       warning.ID.Hex(),
 			Description: warning.Reason,
-			Emoji: discordgo.ComponentEmoji{
-				Name: msg.ReportEmoji.Name,
-				ID:   msg.ReportEmoji.ID,
-			},
+			Emoji:       msg.ToComponentEmoji(msg.ReportEmoji),
 		}
 	}
 
@@ -790,7 +815,7 @@ func clearWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 		return
 	}
 
-	deletedCount, err := db.RemoveExpiredWarnings()
+	deletedCount, err := db.DeleteExpiredWarnings()
 	if err != nil {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка при удалении предупреждений. Свяжитесь с администрацией.")
 		log.Printf("Error removing expired warnings: %v", err)
@@ -804,7 +829,7 @@ func clearWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 				Description: msg.StructuredText{
 					Fields: []*msg.StructuredTextField{
 						{
-							Name:  "Количество удаленных предупрждений",
+							Name:  "Количество удаленных предупреждений",
 							Value: strconv.Itoa(int(deletedCount)),
 						},
 					},
@@ -816,5 +841,11 @@ func clearWarnsChatCommandHandler(session *discordgo.Session, interactionCreate 
 	if err != nil {
 		log.Printf("Error editing interaction response: %v", err)
 		return
+	}
+}
+
+func IntervalDeleteExpiredWarnings() {
+	for range time.Tick(ExpiredWarningDeletionInterval) {
+		db.DeleteExpiredWarnings()
 	}
 }
