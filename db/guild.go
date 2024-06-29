@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -12,6 +13,7 @@ const GuildCollectionName = "guilds"
 
 type Guild struct {
 	ID                     string `bson:"id,omitempty"`
+	SupremeModeratorRoleID string `bson:"supremeModeratorRoleID,omitempty"`
 	ReportChannelID        string `bson:"reportChannelId,omitempty"`
 	ResoledReportChannelID string `bson:"resoledReportChannelId,omitempty"`
 	ReputationLogChannelID string `bson:"reputationLogChannelId,omitempty"`
