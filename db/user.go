@@ -13,7 +13,7 @@ import (
 const (
 	UserCollectionName = "users"
 	ReputationDelay    = 40 * time.Minute
-	BanDelay           = 40 * time.Minute
+	BanDelay           = 3 * time.Hour
 	DefaultReputation  = 0
 )
 

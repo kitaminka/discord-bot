@@ -76,6 +76,17 @@ func banChatCommandHandler(session *discordgo.Session, interactionCreate *discor
 
 	discordUser := interactionCreate.ApplicationCommandData().Options[0].UserValue(session)
 
+	isModerator, err := isUserModerator(session, interactionCreate.Interaction, discordUser)
+	if err != nil {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Произошла ошибка. Свяжитесь с администрацией.")
+		log.Printf("Error checking if user is moderator: %v", err)
+		return
+	}
+	if isModerator {
+		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Вы не можете забанить другого модератора.")
+		return
+	}
+
 	if interactionCreate.Member.User.ID == discordUser.ID {
 		interactionResponseErrorEdit(session, interactionCreate.Interaction, "Вы не можете забанить самого себя.")
 		return

@@ -51,7 +51,7 @@ func muteChatCommandHandler(session *discordgo.Session, interactionCreate *disco
 	}
 	isModerator, err := isUserModerator(session, interactionCreate.Interaction, discordUser)
 	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче муиа. Свяжитесь с администрацией.")
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче мута. Свяжитесь с администрацией.")
 		log.Printf("Error checking if user is moderator: %v", err)
 		return
 	}
