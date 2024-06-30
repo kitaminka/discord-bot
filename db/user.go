@@ -3,15 +3,17 @@ package db
 import (
 	"context"
 	"errors"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 const (
 	UserCollectionName = "users"
 	ReputationDelay    = 40 * time.Minute
+	BanDelay           = 3 * time.Hour
 	DefaultReputation  = 0
 )
 
@@ -24,6 +26,7 @@ type User struct {
 	ID                   string    `bson:"id,omitempty"`
 	Reputation           int       `bson:"reputation,omitempty"`
 	ReputationDelay      time.Time `bson:"reputationDelayEnd,omitempty"`
+	BanDelay             time.Time `bson:"banDelayEnd,omitempty"`
 	ReportsSentCount     int       `bson:"reportsSentCount,omitempty"`
 	ReportsResolvedCount int       `bson:"reportsResolvedCount,omitempty"`
 	MuteCount            int       `bson:"muteCount,omitempty"`
@@ -60,6 +63,11 @@ func ChangeUserReputation(userID string, change int) error {
 func UpdateUserReputationDelay(userID string) error {
 	delayEnd := time.Now().Add(ReputationDelay)
 	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"reputationDelayEnd", delayEnd}}}}, options.Update().SetUpsert(true))
+	return err
+}
+func UpdateUserBanDelay(userID string) error {
+	delayEnd := time.Now().Add(BanDelay)
+	_, err := MongoDatabase.Collection(UserCollectionName).UpdateOne(context.Background(), bson.D{{"id", userID}}, bson.D{{"$set", bson.D{{"banDelayEnd", delayEnd}}}}, options.Update().SetUpsert(true))
 	return err
 }
 func ResetUserReputationDelay(userID string) error {

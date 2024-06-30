@@ -1,10 +1,11 @@
 package interactions
 
 import (
+	"log"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/msg"
-	"log"
 )
 
 var GuildApplicationCommand = &discordgo.ApplicationCommand{
@@ -52,6 +53,12 @@ var GuildApplicationCommand = &discordgo.ApplicationCommand{
 						discordgo.ChannelTypeGuildText,
 					},
 					Required: false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionRole,
+					Name:        "роль_высшего_модератора",
+					Description: "Роль для высшего модератора",
+					Required:    false,
 				},
 			},
 		},
@@ -147,6 +154,16 @@ func guildViewChatCommandHandler(session *discordgo.Session, interactionCreate *
 			Value: moderationLogChannel.Mention(),
 		})
 	}
+	supremeModeratorRole, err := session.State.Role(guild.ID, guild.SupremeModeratorRoleID)
+	if err != nil {
+		log.Printf("Error getting supreme moderation role: %v", err)
+	} else {
+		structuredDescriptionFields = append(structuredDescriptionFields, &msg.StructuredTextField{
+			Emoji: msg.ShieldCheckMarkEmoji,
+			Name:  "Роль для высшего модератора",
+			Value: supremeModeratorRole.Mention(),
+		})
+	}
 
 	_, err = session.InteractionResponseEdit(interactionCreate.Interaction, &discordgo.WebhookEdit{
 		Embeds: &[]*discordgo.MessageEmbed{
@@ -228,6 +245,14 @@ func guildUpdateChatCommandHandler(session *discordgo.Session, interactionCreate
 				Emoji: msg.ShieldCheckMarkEmoji,
 				Name:  "Канал для логирования модерации",
 				Value: channel.Mention(),
+			})
+		case "роль_высшего_модератора":
+			role := option.RoleValue(session, interactionCreate.GuildID)
+			server.SupremeModeratorRoleID = role.ID
+			structuredDescription.Fields = append(structuredDescription.Fields, &msg.StructuredTextField{
+				Emoji: msg.ShieldCheckMarkEmoji,
+				Name:  "Роль для высшего модератора",
+				Value: role.Mention(),
 			})
 		}
 	}

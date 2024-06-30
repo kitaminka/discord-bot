@@ -260,6 +260,21 @@ var (
 			Description:  "Просмотреть информацию о боте",
 			DMPermission: new(bool),
 		},
+		{
+			Type:        discordgo.ChatApplicationCommand,
+			Name:        "ban",
+			Description: "Забанить пользователя",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "пользователь",
+					Description: "Пользователь, которого нужно забанить",
+					Required:    true,
+				},
+			},
+			DMPermission:             new(bool),
+			DefaultMemberPermissions: &ModeratorPermission,
+		},
 	}
 	CommandHandlers = map[string]CommandHandler{
 		"Отправить репорт": reportMessageCommandHandler,
@@ -283,6 +298,7 @@ var (
 		"unmute":      unmuteChatCommandHandler,
 		"info":        infoChatCommandHandler,
 		"clear-warns": clearWarnsChatCommandHandler,
+		"ban":         banChatCommandHandler,
 	}
 )
 
