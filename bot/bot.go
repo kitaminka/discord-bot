@@ -16,6 +16,7 @@ const (
 
 func StartBot(token, mongoUri, mongoDatabaseName string) {
 	db.ConnectMongo(mongoUri, mongoDatabaseName)
+	db.CheckDbSpeed()
 
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
