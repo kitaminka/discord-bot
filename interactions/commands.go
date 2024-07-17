@@ -9,6 +9,14 @@ import (
 
 type CommandHandler func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
 
+var SetupCommand = &discordgo.ApplicationCommand{
+	Type:                     discordgo.ChatApplicationCommand,
+	Name:                     "setup",
+	Description:              "Начальная настройка бота",
+	DMPermission:             new(bool),
+	DefaultMemberPermissions: &AdministratorPermission,
+}
+
 var (
 	Commands = []*discordgo.ApplicationCommand{
 		{
@@ -302,6 +310,15 @@ var (
 	}
 )
 
+func CreateSetupCommand(session *discordgo.Session) {
+	_, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, "", []*discordgo.ApplicationCommand{SetupCommand})
+	if err != nil {
+		log.Panicf("Error creating setup command: %v", err)
+	}
+
+	log.Print("Setup command created")
+}
+
 func CreateApplicationCommands(session *discordgo.Session) {
 	commands, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, "", Commands)
 	if err != nil {
@@ -325,4 +342,24 @@ func RemoveApplicationCommands(session *discordgo.Session) {
 		}
 		log.Printf("Successfully deleted '%v' command", command.Name)
 	}
+}
+
+func SetupCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
+	app, err := session.Application("@me")
+	if err != nil {
+		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка.")
+		log.Printf("Error getting application: %v", err)
+		return
+	}
+
+	if interactionCreate.Member.User.ID != app.Owner.ID {
+		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
+		return
+	}
+	session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "Meow :3",
+		},
+	})
 }

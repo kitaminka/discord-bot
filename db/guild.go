@@ -7,9 +7,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const GuildCollectionName = "guilds"
+const GuildCollectionName = "guild"
 
-// Only main guild in this collection
+// Only main guild is stored in this collection
 
 type Guild struct {
 	ID                     string `bson:"id,omitempty"`

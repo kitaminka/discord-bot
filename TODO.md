@@ -1,0 +1,6 @@
+- Detailed error messages
+- Command sepparating (by category?)
+- Guild command usage
+- Moving constants to db
+- Bot setup command
+- Better command and permission handling
