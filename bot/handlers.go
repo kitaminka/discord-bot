@@ -5,6 +5,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/interactions"
+	"github.com/kitaminka/discord-bot/interactions/setup"
 )
 
 var Handlers = []interface{}{
@@ -12,7 +13,7 @@ var Handlers = []interface{}{
 		switch interactionCreate.Type {
 		case discordgo.InteractionApplicationCommand:
 			if interactionCreate.ApplicationCommandData().Name == "setup" {
-				interactions.SetupCommandHandler(session, interactionCreate)
+				setup.SetupCommandHandler(session, interactionCreate)
 				return
 			}
 			handler, exists := interactions.CommandHandlers[interactionCreate.ApplicationCommandData().Name]

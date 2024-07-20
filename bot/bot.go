@@ -8,6 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/interactions"
+	"github.com/kitaminka/discord-bot/interactions/setup"
 )
 
 const (
@@ -31,7 +32,7 @@ func StartBot(token, mongoUri, mongoDatabaseName string) {
 		log.Panicf("Error opening Discord session: %v", err)
 	}
 
-	interactions.CreateSetupCommand(session)
+	setup.CreateSetupCommand(session)
 
 	log.Print("Bot is now running. Press CTRL-C to exit.")
 

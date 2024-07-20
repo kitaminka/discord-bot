@@ -1,21 +1,11 @@
 package interactions
 
 import (
-	"log"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 )
 
 type CommandHandler func(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate)
-
-var SetupCommand = &discordgo.ApplicationCommand{
-	Type:                     discordgo.ChatApplicationCommand,
-	Name:                     "setup",
-	Description:              "Начальная настройка бота",
-	DMPermission:             new(bool),
-	DefaultMemberPermissions: &AdministratorPermission,
-}
 
 var (
 	Commands = []*discordgo.ApplicationCommand{
@@ -310,56 +300,17 @@ var (
 	}
 )
 
-func CreateSetupCommand(session *discordgo.Session) {
-	_, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, "", []*discordgo.ApplicationCommand{SetupCommand})
+func CreateApplicationCommands(session *discordgo.Session, guildID string) error {
+	commands, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, guildID, Commands)
 	if err != nil {
-		log.Panicf("Error creating setup command: %v", err)
+		return err
 	}
-
-	log.Print("Setup command created")
-}
-
-func CreateApplicationCommands(session *discordgo.Session) {
-	commands, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, "", Commands)
-	if err != nil {
-		log.Panicf("Error creating commands: %v", err)
-	}
-
-	log.Print("Created commands")
 
 	Commands = commands
-}
-func RemoveApplicationCommands(session *discordgo.Session) {
-	commands, err := session.ApplicationCommands(session.State.User.ID, "")
-	if err != nil {
-		log.Printf("Error getting application commands: %v", err)
-		return
-	}
-	for _, command := range commands {
-		err = session.ApplicationCommandDelete(session.State.User.ID, "", command.ID)
-		if err != nil {
-			log.Panicf("Error deleting '%v' command: %v", command.Name, err)
-		}
-		log.Printf("Successfully deleted '%v' command", command.Name)
-	}
+	return err
 }
 
-func SetupCommandHandler(session *discordgo.Session, interactionCreate *discordgo.InteractionCreate) {
-	app, err := session.Application("@me")
-	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка.")
-		log.Printf("Error getting application: %v", err)
-		return
-	}
-
-	if interactionCreate.Member.User.ID != app.Owner.ID {
-		InteractionRespondError(session, interactionCreate.Interaction, "Извините, но у вас нет прав на использование этой команды.")
-		return
-	}
-	session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "Meow :3",
-		},
-	})
+func DeleteApplicationCommands(session *discordgo.Session, guildID string) error {
+	_, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, guildID, []*discordgo.ApplicationCommand{})
+	return err
 }
