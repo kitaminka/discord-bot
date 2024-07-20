@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kitaminka/discord-bot/db"
 	"github.com/kitaminka/discord-bot/interactions"
-	"github.com/kitaminka/discord-bot/interactions/setup"
+	"github.com/kitaminka/discord-bot/setup"
 )
 
 const (
