@@ -49,17 +49,7 @@ func offtopWarnMessageCommandHandler(session *discordgo.Session, interactionCrea
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
 		return
 	}
-	isModerator, err := isUserModerator(session, interactionCreate.Interaction, message.Author)
-	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error checking if user is moderator: %v", err)
-		return
-	}
-	if isModerator {
-		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
-		return
-	}
-	err = session.ChannelMessageDelete(interactionCreate.ChannelID, message.ID)
+	err := session.ChannelMessageDelete(interactionCreate.ChannelID, message.ID)
 	if err != nil {
 		log.Printf("Error deleting message: %v", err)
 		return
@@ -79,17 +69,7 @@ func warnMessageCommandHandler(session *discordgo.Session, interactionCreate *di
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
 		return
 	}
-	isModerator, err := isUserModerator(session, interactionCreate.Interaction, message.Author)
-	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error checking if user is moderator: %v", err)
-		return
-	}
-	if isModerator {
-		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
-		return
-	}
-	err = session.ChannelMessageDelete(interactionCreate.ChannelID, message.ID)
+	err := session.ChannelMessageDelete(interactionCreate.ChannelID, message.ID)
 	if err != nil {
 		log.Printf("Error deleting message: %v", err)
 		return
@@ -463,17 +443,7 @@ func createWarning(session *discordgo.Session, interactionCreate *discordgo.Inte
 		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение боту.")
 		return
 	}
-	isModerator, err := isUserModerator(session, interactionCreate.Interaction, discordUser)
-	if err != nil {
-		InteractionRespondError(session, interactionCreate.Interaction, "Произошла ошибка при выдаче предупреждения. Свяжитесь с администрацией.")
-		log.Printf("Error checking if user is moderator: %v", err)
-		return
-	}
-	if isModerator {
-		InteractionRespondError(session, interactionCreate.Interaction, "Вы не можете выдать предупреждение себе или другому модератору.")
-		return
-	}
-	err = session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
+	err := session.InteractionRespond(interactionCreate.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags: discordgo.MessageFlagsEphemeral,
