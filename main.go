@@ -1,10 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/joho/godotenv"
 	"github.com/kitaminka/discord-bot/bot"
-	"log"
-	"os"
 )
 
 var (
@@ -14,10 +14,7 @@ var (
 )
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Panicf("Error loading .env file: %v", err)
-	}
+	godotenv.Load()
 
 	Token = os.Getenv("DISCORD_TOKEN")
 	MongoUri = os.Getenv("MONGO_URI")
